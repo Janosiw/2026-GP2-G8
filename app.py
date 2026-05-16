@@ -2,7 +2,7 @@ import os
 
 os.environ["REPORT_LLM_URL"] = "https://joudnaif-llm.hf.space"
 
-import shared
+from shared import app
 
 import routes.auth
 import routes.home
