@@ -1,0 +1,7 @@
+static/uploads/
+*.nii
+*.zip
+__pycache__/
+.DS_Store
+venv/
+.venv/
