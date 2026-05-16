@@ -1,0 +1,942 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Brainalyze | Patients</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Cairo:wght@300;400;600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/patients.css') }}">
+</head>
+
+<body>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar">
+  <div class="brand" onclick="window.location.href='{{ url_for('home') }}'">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Brainalyze">
+    <span>Brainalyze</span>
+  </div>
+
+  <nav class="nav">
+    <a href="{{ url_for('home') }}">
+      <img src="{{ url_for('static', filename='images/home-icon.jpg') }}" alt=""><span>Home</span>
+    </a>
+    <a class="active" href="{{ url_for('patients') }}">
+      <img src="{{ url_for('static', filename='images/patient-icon.png') }}" alt=""><span>Patients</span>
+    </a>
+    <a href="{{ url_for('dashboard') }}">
+      <img src="{{ url_for('static', filename='images/home-icon.jpg') }}"><span>Dashboard</span>
+    </a>
+        <a href="{{ url_for('reports') }}">
+      <img src="{{ url_for('static', filename='images/patient-icon.png') }}"><span>Reports</span>
+    </a>
+        <a href="{{ url_for('profile') }}">
+      <img src="{{ url_for('static', filename='images/user-icon.jpg') }}" alt=""><span>Profile</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+      <a href="#" id="logoutBtn" class="logout">
+      <span>Logout</span>
+    </a>
+  </div>
+</aside>
+
+<div class="popup-overlay" id="logoutPopup">
+  <div class="popup-box">
+    <h2>Confirm Logout</h2>
+    <p>Are you sure you want to log out?</p>
+    <div class="popup-buttons">
+      <button class="popup-cancel" id="cancelLogout">Cancel</button>
+      <button class="popup-confirm" id="confirmLogout">Yes, Logout</button>
+    </div>
+  </div>
+</div>
+
+<div class="main-wrapper">
+
+  <div id="docheader">
+    <div style="display:flex; align-items:center; gap:15px;">
+      <button class="toggle-btn" id="toggleBtn">
+        <img src="{{ url_for('static', filename='images/sidebar_icon.png') }}"
+             alt="menu" width="32" height="32" style="object-fit: contain;">
+      </button>
+      <span id="pageTitle">My <span class="pt-blue">Patients</span></span>
+    </div>
+
+    <div class="doctor-info">
+      <div class="doctor-details">
+        <h2>Dr. {{ doctor.name }}</h2>
+        <p>{{ doctor.email }}</p>
+      </div>
+      <img
+        src="{{ doctor.ProfilePicture if doctor.ProfilePicture else url_for('static', filename='images/user.png') }}"
+        class="profile-pic" alt="Profile"
+        onclick="window.location.href='{{ url_for('profile') }}'">
+    </div>
+  </div>
+
+  <div class="main" id="main">
+
+    <section class="glass-card">
+      <div>
+        <h1 class="page-title">Patients</h1>
+        <p class="page-subtitle">Manage your patients, view their cases, and add new scans.</p>
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-top:14px; margin-bottom:4px;">
+        <div style="display:flex; align-items:center; background:#f1f5f9; border-radius:12px; padding:4px; gap:2px;">
+          <button id="tabMyPatients" onclick="switchTab('my')"
+            style="padding:7px 18px; border:none; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; transition:.2s; background:#506DCA; color:#fff;">
+            My Patients
+          </button>
+          <button id="tabSharedCases" onclick="switchTab('shared')"
+            style="padding:7px 18px; border:none; border-radius:9px; font-size:13px; font-weight:600; cursor:pointer; transition:.2s; background:transparent; color:#64748b;">
+            Shared Cases
+          </button>
+        </div>
+        <div id="selectToggle" style="display:flex; align-items:center;">
+          <button onclick="toggleBulkMode()" id="selectModeBtn"
+            style="background:none; border:1.5px solid #e5e7eb; border-radius:8px; padding:5px 14px; font-size:12px; font-weight:600; color:#64748b; cursor:pointer;">
+            Select
+          </button>
+        </div>
+      </div>
+
+      <div class="actions-row" id="myPatientsActions">
+        <div class="search-tools">
+          <form method="get" class="search-container" action="{{ url_for('patients') }}">
+            <input
+              id="patientSearchInput"
+              class="search-input"
+              type="text"
+              name="q"
+              placeholder="Search by name or ID..."
+              value="{{ q or '' }}"
+              autocomplete="off">
+            <input type="hidden" id="searchTumor" name="tumor" value="{{ tumor or '' }}">
+            <input type="hidden" id="searchFrom" name="from" value="{{ date_from or '' }}">
+            <input type="hidden" id="searchTo" name="to" value="{{ date_to or '' }}">
+            <input type="hidden" id="searchCaseStatus" name="case_status" value="{{ case_status or '' }}">
+          </form>
+
+          <button class="btn-filter" id="filterBtn" type="button" aria-label="Filter patients" title="Filter patients">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M3 4h18l-7 8v6l-4 2v-8L3 4z"></path>
+            </svg>
+          </button>
+        </div>
+        <button class="btn-add" id="addBtn">
+          + Add New Patient
+        </button>
+      </div>
+    </section>
+
+    <!-- ── Shared Cases Panel ── -->
+    <div id="sharedCasesPanel" style="display:none;">
+      <div id="sharedCasesList" style="display:flex; flex-direction:column; gap:12px;">
+        <div style="text-align:center; padding:40px; color:#94a3b8; font-size:14px;">
+          Loading shared cases...
+        </div>
+      </div>
+    </div>
+
+    <!-- ── My Patients content (hidden when Shared Cases tab active) ── -->
+    <div id="myPatientsContent">
+
+    {% if no_scan %}
+    <div style="background:#fffbeb; border:1.5px solid #fcd34d; border-radius:12px; padding:11px 18px; margin-bottom:14px; display:flex; align-items:center; gap:10px;">
+      <span style="font-size:18px;">⚠</span>
+      <span style="font-size:13px; font-weight:600; color:#92400e;">Showing patients without any MRI scan</span>
+      <a href="/patients" style="margin-left:auto; font-size:12px; color:#b45309; text-decoration:underline;">Clear filter</a>
+    </div>
+    {% endif %}
+
+    <!-- Bulk action bar -->
+    <div id="bulkBar" style="display:none; align-items:center; gap:12px; background:#fef2f2; border:1.5px solid #fca5a5; border-radius:12px; padding:10px 16px; margin-bottom:12px;">
+      <input type="checkbox" id="selectAllChk" title="Select all visible"
+        style="width:16px; height:16px; cursor:pointer; accent-color:#dc2626;">
+      <label for="selectAllChk" style="font-size:13px; font-weight:600; color:#b91c1c; cursor:pointer; user-select:none;">Select All</label>
+      <span id="selCount" style="font-size:13px; color:#6b7280; margin-left:4px;"></span>
+      <button id="bulkDeleteBtn" onclick="confirmBulkDelete()"
+        style="margin-left:auto; background:#dc2626; color:#fff; border:none; border-radius:8px; padding:7px 18px; font-size:12px; font-weight:700; cursor:pointer; display:none;">
+        Delete Selected
+      </button>
+      <button onclick="toggleBulkMode()"
+        style="background:none; border:1.5px solid #fca5a5; border-radius:8px; padding:5px 14px; font-size:12px; font-weight:600; color:#b91c1c; cursor:pointer;">
+        Cancel
+      </button>
+    </div>
+
+
+    <section class="glass-card">
+      <div id="patientsList" class="patients-list">
+          {% for p in patients %}
+          <div class="patient-card" data-id="{{ p.id }}">
+            <label class="patient-chk-wrap" style="display:none; align-items:center; padding-right:10px; cursor:pointer;">
+              <input type="checkbox" class="patient-chk" data-id="{{ p.id }}"
+                style="width:16px; height:16px; cursor:pointer; accent-color:#dc2626;">
+            </label>
+            <div class="patient-info">
+              <div class="patient-avatar">{{ p.Initials }}</div>
+              <div class="patient-details">
+                <h4>{{ p.FullName }}</h4>
+
+                <p>
+                  {% if p.Age is not none and p.Age != "" %}
+                    {{ p.Age }} years, {{ p.Gender }}
+                  {% else %}
+                    Age: -, {{ p.Gender }}
+                  {% endif %}
+                </p>
+
+                <p>Condition: {{ p.TumorType or 'N/A' }}</p>
+                <p>Last Visit: {{ p.LastMRIDate or '-' }}</p>
+              </div>
+            </div>
+            <div class="patient-actions">
+              <a class="view-btn" href="{{ url_for('patient_profile', patient_id=p.id) }}">
+                View Profile
+              </a>
+              <form id="del-form-{{ p.id }}" action="{{ url_for('delete_patient', patient_id=p.id) }}" method="POST" style="margin-top:8px;">
+                <button type="button" class="delete-btn"
+                  onclick="showPatientDeleteConfirm('del-form-{{ p.id }}', '{{ p.FullName }}')">Delete</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      <p id="noResultsMessage" style="text-align:center;color:#666;margin:10px 0;{% if patients %}display:none;{% endif %}">
+        {% if has_filters %}No results found.{% else %}No matching records.{% endif %}
+      </p>
+      <p id="suggestionsLine" class="suggestions-line" style="{% if not suggestions %}display:none;{% endif %}">
+        Did you mean:
+        {% for s in suggestions %}
+          <button type="button" class="suggestion-btn" data-suggestion="{{ s.FullName }}">{{ s.FullName }} ({{ s.MaskedId or s.id }})</button>{% if not loop.last %},{% endif %}
+        {% endfor %}
+      </p>
+      <div id="loadMorePatients" style="display:none; text-align:center; padding:16px 0;">
+        <button onclick="loadMorePatients()"
+          style="background:#f1f5f9; border:1.5px solid #e2e8f0; border-radius:10px; padding:9px 28px;
+                 font-size:13px; font-weight:600; color:#506DCA; cursor:pointer;">
+          Load More
+        </button>
+      </div>
+    </section>
+
+  </div>
+
+</div>
+
+  <footer class="footer-medical">
+    <div class="fm-wrapper">
+      <div class="fm-left">
+        <img src="/static/images/logo.png" class="fm-logo" alt="Brainalyze">
+        <span class="fm-copy">© 2025 Brainalyze</span>
+      </div>
+
+      <div class="fm-center">
+        <span class="fm-title">FOLLOW US</span>
+        <div class="fm-icons">
+          <a style="text-decoration: none; color: black;" href="https://x.com/brainalyze_co">
+            <img src="/static/images/twitter.png" alt=""><br> @brainalyze_co
+          </a>
+        </div>
+      </div>
+
+      <div class="fm-right">
+        <span class="fm-title">CONTACT</span>
+        <p class="fm-contact">+966530782404</p>
+        <p class="fm-contact">443200466@student.ksu.edu.sa</p>
+      </div>
+    </div>
+  </footer>
+<div id="addModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeAdd()">&times;</span>
+    <h3>Add New Patient</h3>
+
+    <form action="{{ url_for('patients') }}" method="POST" enctype="application/x-www-form-urlencoded">
+
+      <input
+        type="text"
+        name="FullName"
+        placeholder="Full Name"
+        required
+        maxlength="50"
+        pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\s'.-]{3,50}$">
+
+      <input
+        type="date"
+        name="DateOfBirth"
+        id="dobInput"
+        required
+        aria-label="Date of Birth">
+
+      <div class="phone-input">
+        <span class="flag">
+          <img src="{{ url_for('static', filename='images/saudi-flag.png') }}" alt="SA Flag" class="flag-img">
+          +966
+        </span>
+        <input type="tel" name="ContactNumber"
+               placeholder="5XXXXXXXX"
+               required pattern="^5\d{8}$" maxlength="9">
+      </div>
+
+      <select name="Gender" required style="margin-top:12px;">
+        <option value="">Select Gender</option>
+        <option value="Male">Male</option>
+        <option value="Female">Female</option>
+      </select>
+
+      <textarea name="MedicalNotes" placeholder="Medical notes (optional)" rows="4"></textarea>
+
+      <button type="submit" class="btn-add" style="width:100%; margin-top:8px;">
+        Add Patient
+      </button>
+
+    </form>
+  </div>
+</div>
+
+    </div><!-- /myPatientsContent -->
+
+<div id="filterModal" class="modal">
+  <div class="modal-content">
+    <span class="close-btn" onclick="closeFilter()">&times;</span>
+    <h3>Filter Patients</h3>
+
+    <form method="get" action="{{ url_for('patients') }}">
+      <label style="font-size:13px;color:#6b7280;">Tumor Type:</label>
+      <select id="filterTumor" name="tumor">
+        <option value="">All</option>
+        {% for t in tumor_types %}
+          <option value="{{ t }}" {% if tumor == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+
+      <label style="font-size:13px;color:#6b7280;">From Date:</label>
+      <input id="filterFrom" type="date" name="from" value="{{ date_from or '' }}">
+
+      <label style="font-size:13px;color:#6b7280;">To Date:</label>
+      <input id="filterTo" type="date" name="to" value="{{ date_to or '' }}">
+
+      <label style="font-size:13px;color:#6b7280;">Case Status:</label>
+      <select id="filterCaseStatus" name="case_status">
+        <option value="">All</option>
+        <option value="Active" {% if case_status == "Active" %}selected{% endif %}>Active</option>
+        <option value="Recovered" {% if case_status == "Recovered" %}selected{% endif %}>Recovered</option>
+      </select>
+
+      {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+
+      <button type="submit" class="btn-add" style="width:100%; margin-top:8px;">
+        Apply Filter
+      </button>
+
+    </form>
+  </div>
+</div>
+
+<script>
+(() => {
+  const input = document.getElementById("patientSearchInput");
+  const listEl = document.getElementById("patientsList");
+  const noResultsEl = document.getElementById("noResultsMessage");
+  const suggestionsEl = document.getElementById("suggestionsLine");
+  const searchTumorEl = document.getElementById("searchTumor");
+  const searchFromEl = document.getElementById("searchFrom");
+  const searchToEl = document.getElementById("searchTo");
+  const filterTumorEl = document.getElementById("filterTumor");
+  const filterFromEl = document.getElementById("filterFrom");
+  const filterToEl = document.getElementById("filterTo");
+  const filterCaseStatusEl = document.getElementById("filterCaseStatus");
+  const searchCaseStatusEl = document.getElementById("searchCaseStatus");
+  if (!input || !listEl || !noResultsEl || !suggestionsEl) return;
+
+  let debounceTimer = null;
+
+  function esc(text) {
+    return String(text ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function patientCardHtml(p) {
+    const ageLine = p.Age ? `${esc(p.Age)} years, ${esc(p.Gender || "")}` : `Age: -, ${esc(p.Gender || "")}`;
+    const condition = p.TumorType ? esc(p.TumorType) : "N/A";
+    const lastVisit = p.LastMRIDate ? esc(p.LastMRIDate) : "-";
+    const profileUrl = `/patients/${encodeURIComponent(p.id)}/profile`;
+    const deleteUrl = `/delete_patient/${encodeURIComponent(p.id)}`;
+    const chkDisplay = bulkMode.active ? "flex" : "none";
+    return `
+      <div class="patient-card" data-id="${esc(p.id)}">
+        <label class="patient-chk-wrap" style="display:${chkDisplay}; align-items:center; padding-right:10px; cursor:pointer;">
+          <input type="checkbox" class="patient-chk" data-id="${esc(p.id)}"
+            style="width:16px; height:16px; cursor:pointer; accent-color:#dc2626;">
+        </label>
+        <div class="patient-info">
+          <div class="patient-avatar">${esc(p.Initials || "")}</div>
+          <div class="patient-details">
+            <h4>${esc(p.FullName || "")}</h4>
+            <p>${ageLine}</p>
+            <p>Condition: ${condition}</p>
+            <p>Last Visit: ${lastVisit}</p>
+          </div>
+        </div>
+        <div class="patient-actions">
+          <a class="view-btn" href="${profileUrl}">View Profile</a>
+          <form action="${deleteUrl}" method="POST" id="del-dyn-${p.id}" style="margin-top:8px;">
+            <button type="button" class="delete-btn" onclick="showPatientDeleteConfirm('del-dyn-${p.id}', '${p.FullName || p.id}')">Delete</button>
+          </form>
+        </div>
+      </div>
+    `;
+  }
+
+  function wireSuggestionButtons() {
+    suggestionsEl.querySelectorAll(".suggestion-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        input.value = btn.dataset.suggestion || "";
+        runSearch();
+      });
+    });
+  }
+
+  function renderSuggestions(suggestions) {
+    if (!Array.isArray(suggestions) || suggestions.length === 0) {
+      suggestionsEl.style.display = "none";
+      suggestionsEl.innerHTML = "";
+      return;
+    }
+
+    const chips = suggestions
+      .map((s) => `<button type="button" class="suggestion-btn" data-suggestion="${esc(s.FullName || "")}">${esc(s.FullName || "")} (${esc(s.MaskedId || s.id || "")})</button>`)
+      .join(", ");
+    suggestionsEl.innerHTML = `Did you mean: ${chips}`;
+    suggestionsEl.style.display = "block";
+    wireSuggestionButtons();
+  }
+
+  function setNoResultsMessage() {
+    const tumor = (searchTumorEl?.value || filterTumorEl?.value || "").trim();
+    const fromDate = (searchFromEl?.value || filterFromEl?.value || "").trim();
+    const toDate = (searchToEl?.value || filterToEl?.value || "").trim();
+    const caseStatus = (searchCaseStatusEl?.value || filterCaseStatusEl?.value || "").trim();
+    noResultsEl.textContent = (tumor || fromDate || toDate || caseStatus) ? "No results found." : "No matching records.";
+  }
+
+  function renderPatients(patients) {
+    if (!Array.isArray(patients) || patients.length === 0) {
+      listEl.innerHTML = "";
+      setNoResultsMessage();
+      noResultsEl.style.display = "block";
+      return;
+    }
+    listEl.innerHTML = patients.map(patientCardHtml).join("");
+    noResultsEl.style.display = "none";
+  }
+
+  async function runSearch() {
+    const q = input.value.trim();
+    const tumor = (searchTumorEl?.value || filterTumorEl?.value || "").trim();
+    const fromDate = (searchFromEl?.value || filterFromEl?.value || "").trim();
+    const toDate = (searchToEl?.value || filterToEl?.value || "").trim();
+    const caseStatus = (searchCaseStatusEl?.value || filterCaseStatusEl?.value || "").trim();
+    const params = new URLSearchParams({
+      q,
+      tumor,
+      from: fromDate,
+      to: toDate,
+      case_status: caseStatus
+    });
+    try {
+      const res = await fetch(`/patients/search_api?${params.toString()}`, {
+        headers: { "X-Requested-With": "XMLHttpRequest" }
+      });
+      if (!res.ok) return;
+      const data = await res.json();
+      renderPatients(data.patients || []);
+      renderSuggestions(data.suggestions || []);
+      if ((data.patients || []).length > 0) {
+        noResultsEl.style.display = "none";
+      }
+    } catch (_) {}
+  }
+
+  input.form?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    runSearch();
+  });
+
+  input.addEventListener("input", () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(runSearch, 180);
+  });
+
+  wireSuggestionButtons();
+})();
+</script>
+
+<script>
+const filterModal = document.getElementById("filterModal");
+const addModal    = document.getElementById("addModal");
+const filterBtn   = document.getElementById("filterBtn");
+const addBtn      = document.getElementById("addBtn");
+
+if (filterBtn && filterModal) {
+  filterBtn.onclick = () => filterModal.style.display = "flex";
+}
+
+if (addBtn && addModal) {
+  addBtn.onclick = () => addModal.style.display = "flex";
+}
+
+function closeFilter(){
+  if (filterModal) filterModal.style.display = "none";
+}
+function closeAdd(){
+  if (addModal) addModal.style.display = "none";
+}
+
+window.addEventListener("click", (e) => {
+  if (filterModal && e.target === filterModal) {
+    filterModal.style.display = "none";
+  }
+  if (addModal && e.target === addModal) {
+    addModal.style.display = "none";
+  }
+});
+</script>
+
+<script>
+const pageTitle = document.getElementById("pageTitle");
+const toggleBtn = document.getElementById("toggleBtn");
+const sidebar   = document.querySelector(".sidebar");
+const overlay   = document.getElementById("sidebarOverlay");
+
+toggleBtn.addEventListener("click", () => {
+  if (window.innerWidth > 768) {
+    sidebar.classList.toggle("collapsed");
+  } else {
+    sidebar.classList.toggle("active");
+    overlay.classList.toggle("active");
+  }
+});
+
+overlay.addEventListener("click", () => {
+  sidebar.classList.remove("active");
+  overlay.classList.remove("active");
+});
+
+pageTitle.innerHTML = 'My <span class="pt-blue">Patients</span>';
+
+const logoutBtn     = document.getElementById("logoutBtn");
+const logoutPopup   = document.getElementById("logoutPopup");
+const confirmLogout = document.getElementById("confirmLogout");
+const cancelLogout  = document.getElementById("cancelLogout");
+
+logoutBtn.addEventListener("click", function (event) {
+  event.preventDefault();
+  logoutPopup.style.display = "flex";
+});
+
+cancelLogout.addEventListener("click", function () {
+  logoutPopup.style.display = "none";
+});
+
+confirmLogout.addEventListener("click", function () {
+  logoutPopup.style.display = "none";
+  sessionStorage.clear();
+  localStorage.clear();
+  window.location.href = "{{ url_for('logout') }}";
+});
+
+window.addEventListener("click", function (event) {
+  if (event.target === logoutPopup) {
+    logoutPopup.style.display = "none";
+  }
+});
+
+// ── Bulk select / delete ──────────────────────────────────────
+const bulkMode = { active: false };
+
+const bulkBar       = document.getElementById("bulkBar");
+const selectToggle  = document.getElementById("selectToggle");
+const selectModeBtn = document.getElementById("selectModeBtn");
+const selectAllChk  = document.getElementById("selectAllChk");
+const selCountEl    = document.getElementById("selCount");
+const bulkDeleteBtn = document.getElementById("bulkDeleteBtn");
+
+function getVisibleCards() {
+  return Array.from(document.querySelectorAll("#patientsList .patient-card"));
+}
+
+function getChecked() {
+  return Array.from(document.querySelectorAll("#patientsList .patient-chk:checked"));
+}
+
+function updateBulkBar() {
+  const checked = getChecked();
+  const total   = getVisibleCards().length;
+  selCountEl.textContent = checked.length > 0 ? `${checked.length} of ${total} selected` : "";
+  bulkDeleteBtn.style.display = checked.length > 0 ? "inline-block" : "none";
+  selectAllChk.indeterminate = checked.length > 0 && checked.length < total;
+  selectAllChk.checked       = checked.length > 0 && checked.length === total;
+}
+
+function toggleBulkMode() {
+  bulkMode.active = !bulkMode.active;
+  bulkBar.style.display      = bulkMode.active ? "flex"  : "none";
+  selectToggle.style.display = bulkMode.active ? "none"  : "flex";
+
+  document.querySelectorAll(".patient-chk-wrap").forEach(w => {
+    w.style.display = bulkMode.active ? "flex" : "none";
+  });
+  // Uncheck all when leaving select mode
+  if (!bulkMode.active) {
+    document.querySelectorAll(".patient-chk").forEach(c => c.checked = false);
+    updateBulkBar();
+  }
+}
+
+selectAllChk.addEventListener("change", () => {
+  const check = selectAllChk.checked;
+  document.querySelectorAll("#patientsList .patient-chk").forEach(c => c.checked = check);
+  updateBulkBar();
+});
+
+document.getElementById("patientsList").addEventListener("change", e => {
+  if (e.target.classList.contains("patient-chk")) updateBulkBar();
+});
+
+async function confirmBulkDelete() {
+  const checked = getChecked();
+  if (!checked.length) return;
+  const n = checked.length;
+  showConfirm({
+    icon: "⚠",
+    title: `Delete ${n} Patient${n > 1 ? "s" : ""}?`,
+    message: `This will permanently delete ${n} patient${n > 1 ? "s" : ""} and all their data. This cannot be undone.`,
+    confirmText: "Yes, Delete All",
+    variant: "danger",
+    onConfirm: _doBulkDelete
+  });
+}
+async function _doBulkDelete() {
+  const checked = getChecked();
+  const ids = checked.map(c => c.dataset.id);
+  bulkDeleteBtn.disabled = true;
+  bulkDeleteBtn.textContent = "Deleting…";
+
+  try {
+    const res  = await fetch("/patients/bulk_delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids })
+    });
+    const data = await res.json();
+    if (data.status === "success") {
+      // Remove deleted cards from DOM
+      ids.forEach(id => {
+        const card = document.querySelector(`.patient-card[data-id="${id}"]`);
+        if (card) card.remove();
+      });
+      // Exit select mode and reset
+      bulkMode.active = false;
+      bulkBar.style.display      = "none";
+      selectToggle.style.display = "flex";
+      updateBulkBar();
+      const remaining = getVisibleCards().length;
+      if (remaining === 0) {
+        const nr = document.getElementById("noResultsMessage");
+        if (nr) { nr.textContent = "No matching records."; nr.style.display = "block"; }
+      }
+      if (typeof showToast === "function") showToast(`${data.deleted} patient${data.deleted !== 1 ? "s" : ""} deleted.`, "#dc2626");
+    } else {
+      alert("Error: " + (data.message || "Unknown error"));
+    }
+  } catch (err) {
+    alert("Network error. Please try again.");
+  } finally {
+    bulkDeleteBtn.disabled = false;
+    bulkDeleteBtn.textContent = "Delete Selected";
+  }
+}
+</script>
+
+<script>
+(function(){
+  const dob = document.getElementById("dobInput");
+  if(!dob) return;
+
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const dd = String(today.getDate()).padStart(2,'0');
+  const max = `${yyyy}-${mm}-${dd}`;
+
+  dob.max = max;
+
+  dob.addEventListener("change", () => {
+    if(dob.value && dob.value > max){
+      dob.value = "";
+      alert("Date of birth cannot be in the future.");
+    }
+  });
+})();
+</script>
+
+<script>
+function showToast(msg, color) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.style.background = color;
+  t.style.opacity = "1";
+  t.style.transform = "translateY(0)";
+  setTimeout(() => {
+    t.style.opacity = "0";
+    t.style.transform = "translateY(20px)";
+  }, 2500);
+}
+</script>
+
+{% set flashed = get_flashed_messages(with_categories=True) %}
+<script>
+const flashedMessages = {{ flashed|tojson }};
+window.addEventListener("DOMContentLoaded", () => {
+  flashedMessages.forEach(([category, message]) => {
+    if (message === "Profile updated successfully") return;
+    if (category === "success") showToast(message, "#10b981");
+    if (category === "danger") showToast(message, "#ef4444");
+  });
+});
+</script>
+
+<div id="toast"
+     style="
+        position: fixed;
+        top: 20px;
+        margin-left: 50%;
+        margin-right: 50%;
+        width:max-content;
+        transform: translateX(-50%);
+        padding: 9px 20px;
+        background: #10b981ac;
+        color: #fff;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 500;
+        box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+        z-index: 999999;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .35s ease, transform .35s ease;
+        border: #10b981 1.5px solid;
+     ">
+</div>
+
+<!-- ── Generic Confirm Modal ── -->
+<div class="popup-overlay" id="confirmModal" onclick="if(event.target===this)closeConfirmModal()">
+  <div class="popup-box">
+    <div class="confirm-icon" id="confirmIcon"></div>
+    <h2 id="confirmTitle"></h2>
+    <p id="confirmMessage"></p>
+    <div class="popup-buttons">
+      <button class="popup-cancel" onclick="closeConfirmModal()">Cancel</button>
+      <button class="popup-confirm" id="confirmActionBtn"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showConfirm({ title, message, icon, confirmText, variant, onConfirm }) {
+  document.getElementById("confirmTitle").textContent   = title   || "Are you sure?";
+  document.getElementById("confirmMessage").textContent = message || "";
+  document.getElementById("confirmIcon").textContent    = icon    || "";
+  const btn = document.getElementById("confirmActionBtn");
+  btn.textContent = confirmText || "Confirm";
+  btn.className   = "popup-confirm " + (variant || "");
+  btn.onclick     = () => { closeConfirmModal(); onConfirm(); };
+  document.getElementById("confirmModal").style.display = "flex";
+}
+function closeConfirmModal() {
+  document.getElementById("confirmModal").style.display = "none";
+}
+function showPatientDeleteConfirm(formId, name) {
+  showConfirm({
+    icon: "⚠",
+    title: "Delete Patient?",
+    message: `This will permanently delete "${name}" and all their cases and scans. This cannot be undone.`,
+    confirmText: "Yes, Delete",
+    variant: "danger",
+    onConfirm: () => document.getElementById(formId).submit()
+  });
+}
+</script>
+
+<script>
+let _sharedLoaded = false;
+let _sharedAll    = [];
+const PAGE_SIZE   = 10;
+
+// ── Load More: My Patients ──────────────────────────────────────────────────
+(function initPatientLoadMore() {
+  document.addEventListener("DOMContentLoaded", () => {
+    const cards = Array.from(
+      document.querySelectorAll("#patientsList .patient-card")
+    );
+    if (cards.length <= PAGE_SIZE) return;
+    cards.slice(PAGE_SIZE).forEach(c => { c.dataset.hidden = "1"; c.style.display = "none"; });
+    document.getElementById("loadMorePatients").style.display = "block";
+  });
+})();
+
+function loadMorePatients() {
+  const hidden = Array.from(
+    document.querySelectorAll("#patientsList .patient-card[data-hidden='1']")
+  );
+  const next = hidden.slice(0, PAGE_SIZE);
+  next.forEach(c => { c.style.display = ""; delete c.dataset.hidden; });
+  if (hidden.length - next.length === 0) {
+    document.getElementById("loadMorePatients").style.display = "none";
+  }
+}
+
+// ── Auto-switch to shared tab if ?tab=shared is in the URL ─────────────────
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("tab") === "shared") {
+    document.addEventListener("DOMContentLoaded", () => switchTab("shared"));
+  }
+})();
+
+// ── Tab switch ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  const myBtn       = document.getElementById("tabMyPatients");
+  const sharedBtn   = document.getElementById("tabSharedCases");
+  const myContent   = document.getElementById("myPatientsContent");
+  const myActions   = document.getElementById("myPatientsActions");
+  const sharedPanel = document.getElementById("sharedCasesPanel");
+  const selectToggle = document.getElementById("selectToggle");
+
+  if (tab === "shared") {
+    myBtn.style.background     = "transparent";
+    myBtn.style.color          = "#64748b";
+    sharedBtn.style.background = "#506DCA";
+    sharedBtn.style.color      = "#fff";
+    myContent.style.display    = "none";
+    myActions.style.display    = "none";
+    if (selectToggle) selectToggle.style.visibility = "hidden";
+    sharedPanel.style.display  = "block";
+    if (!_sharedLoaded) loadSharedCases();
+  } else {
+    sharedBtn.style.background = "transparent";
+    sharedBtn.style.color      = "#64748b";
+    myBtn.style.background     = "#506DCA";
+    myBtn.style.color          = "#fff";
+    myContent.style.display    = "block";
+    myActions.style.display    = "";
+    if (selectToggle) selectToggle.style.visibility = "visible";
+    sharedPanel.style.display  = "none";
+  }
+}
+
+// ── Shared Cases card builder ───────────────────────────────────────────────
+function sharedCaseCard(c) {
+  const statusColor = c.status === "Recovered" ? "#16a34a" : "#2563eb";
+  const statusBg    = c.status === "Recovered" ? "#dcfce7"  : "#dbeafe";
+  const initials    = (c.patient_name || "?").split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+  const roleLabel   = c.role === "invited"
+    ? `<span style="background:#fef3c7;color:#b45309;border-radius:6px;padding:2px 9px;font-size:11px;font-weight:700;">Shared with me</span>`
+    : `<span style="background:#ede9fe;color:#6d28d9;border-radius:6px;padding:2px 9px;font-size:11px;font-weight:700;">Shared by me</span>`;
+  return `
+  <div onclick="window.location.href='/patients/${c.patient_id}/cases/${c.case_id}'"
+       style="background:#fff;border-radius:14px;padding:16px 20px;display:flex;align-items:center;
+              gap:16px;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer;transition:.15s;border:1.5px solid #e5e7eb;"
+       onmouseover="this.style.borderColor='#506DCA'" onmouseout="this.style.borderColor='#e5e7eb'">
+    <div style="width:46px;height:46px;border-radius:50%;background:#e0e7ff;display:flex;align-items:center;
+                justify-content:center;font-weight:700;font-size:16px;color:#3730a3;flex-shrink:0;">
+      ${initials}
+    </div>
+    <div style="flex:1;min-width:0;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:3px;">
+        <span style="font-weight:700;font-size:15px;color:#1e2a47;">${c.patient_name}</span>
+        ${roleLabel}
+      </div>
+      <div style="font-size:13px;color:#6b7280;">Diagnosis: <b>${c.diagnosis}</b></div>
+      ${c.start_date ? `<div style="font-size:12px;color:#9ca3af;margin-top:2px;">Started: ${c.start_date}</div>` : ""}
+    </div>
+    <span style="background:${statusBg};color:${statusColor};border-radius:8px;padding:4px 12px;
+                 font-size:12px;font-weight:700;white-space:nowrap;">${c.status}</span>
+  </div>`;
+}
+
+// ── Load Shared Cases (paginated) ──────────────────────────────────────────
+let _sharedPage = 0;
+
+async function loadSharedCases() {
+  const list = document.getElementById("sharedCasesList");
+  list.innerHTML = `<div style="text-align:center;padding:40px;color:#94a3b8;font-size:14px;">Loading...</div>`;
+  try {
+    const res  = await fetch("/api/shared_cases");
+    const data = await res.json();
+    _sharedAll  = data.cases || [];
+    _sharedPage = 0;
+
+    if (_sharedAll.length === 0) {
+      list.innerHTML = `<div style="text-align:center;padding:60px;color:#94a3b8;font-size:15px;">No shared cases yet.</div>`;
+      _sharedLoaded = true;
+      return;
+    }
+
+    renderSharedPage(list, true);
+    _sharedLoaded = true;
+  } catch (e) {
+    list.innerHTML = `<div style="text-align:center;padding:40px;color:#ef4444;font-size:14px;">Failed to load shared cases.</div>`;
+  }
+}
+
+function renderSharedPage(list, reset) {
+  const start  = _sharedPage * PAGE_SIZE;
+  const batch  = _sharedAll.slice(start, start + PAGE_SIZE);
+  _sharedPage++;
+
+  const cardsHtml = batch.map(sharedCaseCard).join("");
+  if (reset) {
+    list.innerHTML = cardsHtml;
+  } else {
+    document.getElementById("loadMoreShared").insertAdjacentHTML("beforebegin", cardsHtml);
+  }
+
+  const remaining = _sharedAll.length - _sharedPage * PAGE_SIZE;
+  let btn = document.getElementById("loadMoreShared");
+  if (remaining > 0) {
+    if (!btn) {
+      const el = document.createElement("div");
+      el.id = "loadMoreShared";
+      el.style.cssText = "text-align:center;padding:16px 0;";
+      el.innerHTML = `<button onclick="renderSharedPage(document.getElementById('sharedCasesList'), false)"
+        style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:9px 28px;
+               font-size:13px;font-weight:600;color:#506DCA;cursor:pointer;">
+        Load More (${remaining} remaining)
+      </button>`;
+      list.appendChild(el);
+    } else {
+      btn.querySelector("button").textContent = `Load More (${remaining} remaining)`;
+    }
+  } else {
+    if (btn) btn.remove();
+  }
+}
+</script>
+
+<script src="/static/js/nav.js"></script>
+<script src="/static/js/helpbot.js"></script>
+</body>
+</html>

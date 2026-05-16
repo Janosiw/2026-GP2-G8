@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Brainalyze | Case Details</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Cairo:wght@300;400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/case_view.css') }}">
+
+  <style>
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px);
+  background: #4ade80;
+  color: white;
+  padding: 14px 26px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+  opacity: 0;
+  transition: all .35s ease;
+  z-index: 999999;
+  font-family: 'Poppins';
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.toast.hidden {
+  display: none;
+}
+:root {
+  --brand: #506DCA;
+  --bg: #f7faff;
+  --card: #ffffff;
+  --text: #1e2a47;
+  --muted: #6a7393;
+  --border: #e6ebff;
+}
+.tp-suggestion-chip {
+  background: #f0f4ff;
+  color: #374a8c;
+  border: 1.5px solid #d0d9f5;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  text-align: left;
+  max-width: 320px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.18s;
+}
+.tp-suggestion-chip:hover { background: #dde5fa; }
+
+/* ── Similar Cases Button ── */
+.sim-launch-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #fff;
+  color: #506DCA;
+  border: 1.5px solid #c8d4f5;
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s;
+}
+.sim-launch-btn:hover { background: #f0f4ff; border-color: #506DCA; }
+.sim-launch-btn .slb-spinner {
+  width: 13px; height: 13px; border: 2px solid #c8d4f5;
+  border-top-color: #506DCA; border-radius: 50%;
+  animation: spin 0.7s linear infinite; display: none;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Modal ── */
+.sim-modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(15,23,42,0.45);
+  z-index: 9000;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 0.22s ease;
+  pointer-events: none;
+}
+.sim-modal-overlay.open { opacity: 1; pointer-events: all; }
+.sim-modal {
+  background: #fff;
+  border-radius: 20px;
+  width: min(780px, 95vw);
+  max-height: 82vh;
+  display: flex; flex-direction: column;
+  transform: translateY(22px) scale(0.97);
+  transition: transform 0.22s ease;
+}
+.sim-modal-overlay.open .sim-modal { transform: translateY(0) scale(1); }
+.sim-modal-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 22px 26px 16px;
+  border-bottom: 1px solid #e6ebff;
+  flex-shrink: 0;
+}
+.sim-modal-head h3 { margin: 0; font-size: 17px; font-weight: 700; color: #1e2a47; }
+.sim-modal-head .sub { font-size: 12px; color: #8a96b8; margin-top: 3px; }
+.sim-close-btn {
+  background: #f3f4f8; border: none; border-radius: 8px;
+  width: 34px; height: 34px; cursor: pointer; font-size: 18px; color: #6a7393;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.sim-close-btn:hover { background: #e6ebff; }
+.sim-modal-body {
+  overflow-y: auto; padding: 20px 26px; flex: 1;
+}
+.sim-modal-footer {
+  border-top: 1px solid #e6ebff;
+  padding: 18px 26px;
+  flex-shrink: 0;
+  background: #f9fafb;
+  border-radius: 0 0 20px 20px;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+.sim-modal-footer .footer-q {
+  font-size: 13px; font-weight: 600; color: #1e2a47;
+}
+.sim-modal-footer .footer-q span { display: block; font-size: 12px; font-weight: 400; color: #8a96b8; margin-top: 2px; }
+.sim-footer-btns { display: flex; gap: 10px; }
+.sim-yes-btn {
+  background: #506DCA; color: #fff; border: none;
+  border-radius: 10px; padding: 9px 22px; font-size: 13px;
+  font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif;
+  transition: background 0.18s;
+}
+.sim-yes-btn:hover { background: #3b57b5; }
+.sim-no-btn {
+  background: #f3f4f8; color: #6a7393; border: 1.5px solid #e0e4f0;
+  border-radius: 10px; padding: 9px 18px; font-size: 13px;
+  font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif;
+}
+.sim-no-btn:hover { background: #e6ebff; }
+body {
+  margin: 0;
+  font-family: 'Poppins', 'Cairo', Arial, sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  display: flex;
+}
+.main {
+  padding: 28px;
+  margin-top: 3%;
+}
+.case-summary-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 26px;
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  margin-bottom: 26px;
+}
+.case-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.case-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tp-btn {
+  background: var(--brand);
+  color: white;
+  border: none;
+  padding: 10px 22px;
+  border-radius: 10px;
+  font-size: 15px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: .25s ease;
+  box-shadow: 0 4px 12px rgba(80,109,202,0.25);
+}
+.tp-btn:hover {
+  background: #3f58b8;
+  transform: translateY(-1px);
+}
+.tag-pill {
+  background: #e8ffe9;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-right: 10px;
+  color: #1c7a3c;
+}
+textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  border: 1.5px solid #ccd4ff;
+  border-radius: 12px;
+  padding: 12px;
+  resize: none;
+  font-family: inherit;
+}
+.btn-save {
+  background: var(--brand);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 26px;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(80,109,202,0.25);
+}
+.btn-cancel {
+  background: #efefef;
+  border-radius: 12px;
+  padding: 12px 26px;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  font-weight: 500;
+}
+.scans-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 26px;
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+  margin-top: 35px;
+}
+.scan-card {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  gap: 14px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: #fff;
+  margin-bottom: 12px;
+  align-items: center;
+}
+.tumor-trend {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 90px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  gap: 4px;
+  text-align: center;
+}
+.tumor-trend.improved {
+  background: #e9fdf1;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+.tumor-trend.worsened {
+  background: #fff1f2;
+  color: #be123c;
+  border: 1px solid #fecdd3;
+}
+.tumor-trend.stable {
+  background: #f0f4ff;
+  color: #3b4a9e;
+  border: 1px solid #c7d2fe;
+}
+.tumor-trend.baseline {
+  background: #f5f5f5;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
+}
+.tumor-trend.healthy {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+.tumor-trend.no-data {
+  background: #fafafa;
+  color: #9ca3af;
+  border: 1px solid #e5e7eb;
+}
+.tumor-trend .trend-arrow {
+  font-size: 20px;
+  line-height: 1;
+}
+.tumor-trend .trend-pct {
+  font-size: 14px;
+  font-weight: 700;
+}
+.tumor-trend .trend-label {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.85;
+}
+.scan-thumb img {
+  width: 120px;
+  height: 90px;
+  border-radius: 10px;
+  object-fit: cover;
+}
+.add-scan-btn {
+  background: var(--brand);
+  color: white;
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 4px 12px rgba(80,109,202,0.25);
+}
+.delete-scan-btn {
+  background: none;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s ease;
+  margin-left: 8px;
+}
+.delete-scan-btn:hover {
+  background: #fee2e2;
+}
+.tag-pill.recovered {
+  background: #e0f2fe;
+  color: #0369a1;
+}
+.view-scan-btn {
+  background: #506DCA;
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  display: inline-block;
+  transition: 0.25s ease;
+  box-shadow: 0 3px 8px rgba(80, 109, 202, 0.25);
+}
+.view-scan-btn:hover {
+  background: #3f57ac;
+  transform: translateY(-2px);
+}
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(2px);
+  z-index: 1666;
+}
+.sidebar-overlay.active {
+  display: block;
+}
+
+/* ── Similar Recovered Cases ── */
+.sim-section {
+  background: #fff;
+  border-radius: 18px;
+  padding: 26px;
+  border: 1px solid #e6ebff;
+  margin-top: 28px;
+}
+.sim-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.sim-section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e2a47;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sim-count-badge {
+  background: #e9eeff;
+  color: #506DCA;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+.sim-subtitle {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+.sim-empty {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+  padding: 32px 0;
+}
+.sim-card {
+  border: 1px solid #e6ebff;
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  background: #fafbff;
+}
+.sim-card:last-child { margin-bottom: 0; }
+.sim-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.sim-patient-info { flex: 1; min-width: 180px; }
+.sim-patient-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1e2a47;
+}
+.sim-patient-meta {
+  font-size: 12px;
+  color: #6a7393;
+  margin-top: 3px;
+}
+.sim-tumor-badge {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  border-radius: 6px;
+  text-transform: capitalize;
+  background: #e9eeff;
+  color: #3b4a9e;
+  border: 1px solid #c7d0f7;
+}
+.sim-tumor-badge.tumor-glioma    { background:#fde8e8; color:#9b1c1c; border-color:#fca5a5; }
+.sim-tumor-badge.tumor-meningioma{ background:#fef3c7; color:#92400e; border-color:#fcd34d; }
+.sim-tumor-badge.tumor-pituitary { background:#e0f2fe; color:#0369a1; border-color:#7dd3fc; }
+.sim-criteria {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 14px;
+}
+.sim-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid;
+}
+.sim-chip.matched {
+  background: #e9fdf1;
+  color: #166534;
+  border-color: #86efac;
+}
+.sim-chip.unmatched {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: #fcd34d;
+}
+.sim-chip .chip-icon { font-size: 11px; font-weight: 700; }
+.sim-divider {
+  border: none;
+  border-top: 1px solid #e6ebff;
+  margin: 14px 0;
+}
+.sim-scans-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #506DCA;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 8px;
+}
+.sim-scans-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.sim-scans-table th {
+  text-align: left;
+  color: #9ca3af;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-bottom: 1px solid #e6ebff;
+}
+.sim-scans-table td {
+  padding: 6px 8px;
+  color: #374151;
+  border-bottom: 1px solid #f3f4f6;
+}
+.sim-scans-table tr:last-child td { border-bottom: none; }
+.sim-tp-block {
+  background: #f0f4ff;
+  border-left: 3px solid #506DCA;
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  margin-top: 14px;
+}
+.sim-tp-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #506DCA;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 4px;
+}
+.sim-tp-text {
+  font-size: 13px;
+  color: #1e2a47;
+  line-height: 1.6;
+}
+
+  </style>
+</head>
+
+<body>
+ <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar">
+  <div class="brand" onclick="window.location.href='{{ url_for('home') }}'">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Brainalyze">
+    <span>Brainalyze</span>
+  </div>
+  <nav class="nav">
+    <a href="{{ url_for('home') }}"><img src="{{ url_for('static', filename='images/home-icon.jpg') }}" alt=""><span>Home</span></a>
+    <a class="active" href="{{ url_for('patients') }}"><img src="{{ url_for('static', filename='images/patient-icon.png') }}" alt=""><span>Patients</span></a>
+    <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='images/home-icon.jpg') }}" alt=""><span>Dashboard</span></a>
+    <a href="{{ url_for('reports') }}"><img src="{{ url_for('static', filename='images/patient-icon.png') }}" alt=""><span>Reports</span></a>
+    <a href="{{ url_for('profile') }}"><img src="{{ url_for('static', filename='images/user-icon.jpg') }}" alt=""><span>Profile</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="#" id="logoutBtn" class="logout"><span>Logout</span></a>
+  </div>
+</aside>
+
+<div class="popup-overlay" id="logoutPopup">
+  <div class="popup-box">
+    <h2>Confirm Logout</h2>
+    <p>Are you sure you want to log out?</p>
+    <div class="popup-buttons">
+      <button class="popup-cancel" id="cancelLogout">Cancel</button>
+      <button class="popup-confirm" id="confirmLogout">Yes, Logout</button>
+    </div>
+  </div>
+</div>
+
+<div class="main-wrapper">
+    <div id="docheader">
+      <div style="display:flex; align-items:center; gap:15px;">
+        <button class="toggle-btn" id="toggleBtn">
+          <img src="{{ url_for('static', filename='images/sidebar_icon.png') }}" width="32">
+        </button>
+        <span id="pageTitle">Case Details</span>
+      </div>
+
+      <div class="doctor-info">
+        <div class="doctor-details">
+          <h2>Dr. {{ doctor.name }}</h2>
+          <p>{{ doctor.email }}</p>
+        </div>
+        <img src="{{ doctor.ProfilePicture }}" class="profile-pic">
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="bc">
+        <a href="{{ url_for('patients') }}" style="color:#7d7d7d; text-decoration:none;">Patients</a> ›
+        {% if is_owner %}
+          <a href="{{ url_for('patient_profile', patient_id=patient_id) }}" style="color:#7d7d7d; text-decoration:none;">{{ patient_name }}</a> ›
+        {% else %}
+          <a href="{{ url_for('patients') }}?tab=shared" style="color:#7d7d7d; text-decoration:none;">Shared Cases</a> ›
+        {% endif %}
+        <span style="color:#7d7d7d;">Case {{ case_number }}</span>
+      </div>
+
+
+      <div class="case-summary-card">
+        <div class="case-top">
+          <div class="case-title">
+            Case {{ case_number }} — {{ case.Diagnosis or "Pending Diagnosis" }}
+          </div>
+          <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+            {% if is_invited %}
+            <span style="background:#eef1ff;color:#506DCA;font-size:12px;font-weight:600;
+                         padding:6px 14px;border-radius:20px;border:1px solid #c8d4f5;">
+              👁 Invited Consultant
+            </span>
+            {% endif %}
+            <button class="sim-launch-btn" id="simLaunchBtn" onclick="loadSimilarCases()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              Similar Cases
+              <span class="slb-spinner" id="simSpinner"></span>
+            </button>
+            {% if is_owner %}
+            <button class="sim-launch-btn" onclick="openShareModal()"
+                    style="gap:6px;color:#059669;border-color:#a7f3d0;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+              Share
+            </button>
+            <button id="tp_edit_btn" class="tp-btn">Edit treatment plan</button>
+            {% endif %}
+          </div>
+        </div>
+
+        <div style="margin-top:16px;">
+          <span class="tag-pill {% if case.Status == "Recovered" %}recovered{% endif %}">{{ case.Status }}</span><br><br>
+          <span style="margin-left:10px;">Duration: {{ case.StartDate }} — {{ case.EndDate or "Present" }}</span><br><br>
+          <span style="margin-left:10px;">Last Scan: {{ case.LastUpdateFormatted }}</span>
+        </div>
+
+        <div class="tp-section">
+          <h4 style="font-size:13px; font-weight:600; color:#1e2a47; margin-bottom:6px;">
+            Treatment Plan:
+          </h4>
+
+          <p id="tp_text" style="font-size:13px; margin-bottom:6px; color:#374151;">
+            {{ case.TreatmentPlan or "—" }}
+          </p>
+
+          <form
+            id="tp_form"
+            action="{{ url_for('update_treatment_plan', patient_id=patient_id, case_id=case_id) }}"
+            method="POST"
+            style="display:none; margin-top:14px;"
+          >
+            <textarea id="tp_input" name="treatment_plan">{{ case.TreatmentPlan }}</textarea>
+
+            <div id="tp_suggestions_wrap" style="display:none; margin-top:14px;">
+              <div style="font-size:11px; font-weight:700; color:#6a7393; text-transform:uppercase; letter-spacing:0.8px; margin-bottom:8px;">Suggestions from similar cases</div>
+              <div id="tp_suggestions_chips" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
+            </div>
+
+            <div style="margin-top:18px; display:flex; gap:18px;">
+              <button type="submit" class="btn-save">Save</button>
+              <button type="button" id="tp_cancel_btn" class="btn-cancel">Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="scans-card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="font-size:20px; font-weight:700;">MRI Scans</h3>
+
+          {% if is_owner %}
+          <a href="{{ url_for('scans', patient_id=patient_id, case_id=case_id) }}" class="add-scan-btn">
+            + Add Scan
+          </a>
+          {% endif %}
+        </div>
+
+        {% if scans %}
+          <div style="display:grid; grid-template-columns:120px 1fr auto; gap:14px; padding:6px 12px; margin-bottom:4px;">
+            <div></div>
+            <div></div>
+            <div style="min-width:100px; text-align:center; font-size:11px; font-weight:700; color:#506DCA; text-transform:uppercase; letter-spacing:1px; padding:4px 0;">Tumor Progress</div>
+          </div>
+          {% for scan in scans|sort(attribute='UploadDate') %}
+            <div class="scan-card">
+              <div class="scan-thumb">
+                <img src="{{ scan.MRIFilePath }}">
+              </div>
+
+              <div>
+                <div class="scan-name" style="font-weight:600;">MRI Scan #{{ loop.index }}</div>
+                <div class="scan-meta" style="font-size:13px; color:#6b7280;">Uploaded: {{ scan.UploadDate }}</div>
+
+                <a class="view-scan-btn"
+                   href="{{ url_for('view_scan', scan_id=scan.id, scan_number=loop.index, case_id=case_id, case_number=case_number) }}">
+                   View Scan
+                </a>
+                {% if is_owner %}
+                <button class="delete-scan-btn" onclick="confirmDelete('{{ scan.id }}', this)">
+                  &#128465; Delete
+                </button>
+                {% endif %}
+              </div>
+
+              <div>
+                {% if scan.is_baseline %}
+                  <div class="tumor-trend baseline">
+                    <span class="trend-arrow">&#9679;</span>
+                    <span class="trend-pct">100%</span>
+                    <span class="trend-label">Baseline</span>
+                    {% if scan.is_3d and scan.volume_cm3 is not none %}
+                      <span style="font-size:10px;color:#506DCA;font-weight:600;margin-top:2px;">
+                        {{ "%.2f"|format(scan.volume_cm3) }} cm³ &bull; 3D
+                      </span>
+                    {% endif %}
+                  </div>
+                {% elif scan.is_healthy %}
+                  <div class="tumor-trend healthy">
+                    <span class="trend-arrow">&#10003;</span>
+                    <span class="trend-pct">0%</span>
+                    <span class="trend-label">Tumor Free</span>
+                  </div>
+                {% elif scan.size_trend == "improved" %}
+                  <div class="tumor-trend improved">
+                    <span class="trend-arrow">&#8595;</span>
+                    <span class="trend-pct">{{ scan.size_change }}%</span>
+                    <span class="trend-label">of baseline</span>
+                    {% if scan.is_3d and scan.volume_cm3 is not none %}
+                      <span style="font-size:10px;color:#166534;font-weight:600;margin-top:2px;">
+                        {{ "%.2f"|format(scan.volume_cm3) }} cm³ &bull; 3D
+                      </span>
+                    {% endif %}
+                  </div>
+                {% elif scan.size_trend == "worsened" %}
+                  <div class="tumor-trend worsened">
+                    <span class="trend-arrow">&#8593;</span>
+                    <span class="trend-pct">{{ scan.size_change }}%</span>
+                    <span class="trend-label">of baseline</span>
+                    {% if scan.is_3d and scan.volume_cm3 is not none %}
+                      <span style="font-size:10px;color:#be123c;font-weight:600;margin-top:2px;">
+                        {{ "%.2f"|format(scan.volume_cm3) }} cm³ &bull; 3D
+                      </span>
+                    {% endif %}
+                  </div>
+                {% elif scan.size_trend == "stable" %}
+                  <div class="tumor-trend stable">
+                    <span class="trend-arrow">&#8596;</span>
+                    <span class="trend-pct">{{ scan.size_change if scan.size_change else "~100" }}%</span>
+                    <span class="trend-label">of baseline</span>
+                    {% if scan.is_3d and scan.volume_cm3 is not none %}
+                      <span style="font-size:10px;color:#3b4a9e;font-weight:600;margin-top:2px;">
+                        {{ "%.2f"|format(scan.volume_cm3) }} cm³ &bull; 3D
+                      </span>
+                    {% endif %}
+                  </div>
+                {% else %}
+                  <div class="tumor-trend no-data">
+                    <span class="trend-arrow">&#8212;</span>
+                    <span class="trend-label">No Data</span>
+                    {% if scan.is_3d %}
+                      <span style="font-size:10px;color:#2563eb;font-weight:600;margin-top:2px;">3D</span>
+                    {% endif %}
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p style="color:#777; margin-top:16px;">No scans added yet.</p>
+        {% endif %}
+      </div>
+
+
+    </div>
+
+    <!-- ── Case Comments ─────────────────────────────────────────────────── -->
+    <div style="padding: 0 28px 20px 28px;">
+      <div style="background:#fff; border-radius:18px; padding:24px 26px;
+                  border:1px solid var(--border); box-shadow:0 6px 18px rgba(0,0,0,0.06);">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+          <svg width="20" height="20" fill="none" stroke="#506DCA" stroke-width="2"
+               viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          <span style="font-weight:700;font-size:16px;color:#1e2a47;">Case Comments</span>
+          <span id="commentsCount" style="background:#eef1ff;color:#506DCA;font-size:11px;
+                font-weight:700;padding:2px 10px;border-radius:20px;"></span>
+        </div>
+
+        <!-- Comments list -->
+        <div id="commentsList" style="display:flex;flex-direction:column;gap:12px;
+             margin-bottom:20px;max-height:360px;overflow-y:auto;
+             padding-right:4px;">
+          <div id="commentsEmpty" style="text-align:center;padding:28px 0;
+               color:#9ca3af;font-size:13px;">No comments yet. Be the first to add one.</div>
+        </div>
+
+        <!-- New comment form — only for invited consultants -->
+        {% if is_invited %}
+        <div style="border-top:1px solid #f0f2fb;padding-top:18px;">
+          <div style="font-size:12px;font-weight:600;color:#6a7393;
+               text-transform:uppercase;letter-spacing:0.6px;margin-bottom:8px;">
+            Add a Comment
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-end;">
+            <textarea id="commentInput"
+              placeholder="Write your clinical observation or note…"
+              rows="3"
+              style="flex:1;resize:vertical;border:1.5px solid #dde3f5;border-radius:12px;
+                     padding:12px 14px;font-size:13px;font-family:'Poppins',sans-serif;
+                     color:#1e2a47;outline:none;transition:border 0.2s;line-height:1.6;"
+              onfocus="this.style.borderColor='#506DCA'"
+              onblur="this.style.borderColor='#dde3f5'"></textarea>
+            <button onclick="submitComment()"
+              style="background:#506DCA;color:#fff;border:none;padding:12px 22px;
+                     border-radius:12px;font-size:13px;font-weight:600;cursor:pointer;
+                     white-space:nowrap;box-shadow:0 4px 12px rgba(80,109,202,0.25);
+                     transition:0.2s ease;height:fit-content;">
+              Post Comment
+            </button>
+          </div>
+        </div>
+        {% else %}
+        <div style="border-top:1px solid #f0f2fb;padding-top:14px;
+                    text-align:center;color:#9ca3af;font-size:13px;">
+          💬 Comments are written by invited consultants. You can read them here.
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+
+    {% if is_owner %}
+    <div style="padding: 0 28px 28px 28px;">
+      <div style="background:#fff; border-radius:18px; padding:22px 26px; border:1px solid var(--border); box-shadow:0 6px 18px rgba(0,0,0,0.06); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+        <div>
+          <div style="font-weight:700; font-size:16px; color:#1e2a47;">Mark Case as Recovered</div>
+          <div style="font-size:13px; color:#6a7393; margin-top:4px;">Change the case status from Active to Recovered once the patient has fully recovered.</div>
+        </div>
+        {% if case.Status == "Recovered" %}
+          <span style="background:#dcfce7;color:#166534;font-size:13px;font-weight:600;
+                       padding:10px 22px;border-radius:12px;border:1px solid #86efac;">
+            ✓ Already Recovered
+          </span>
+        {% else %}
+          <button id="markRecoveredBtn" onclick="markAsRecovered()" style="background:#506DCA; color:white; border:none; padding:12px 26px; border-radius:12px; font-size:15px; font-weight:600; cursor:pointer; box-shadow:0 4px 12px rgba(3,105,161,0.25); transition:0.25s ease;">
+            Mark as Recovered
+          </button>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="page-back-wrap">
+      <a href="{{ url_for('patient_profile', patient_id=patient_id) }}"
+        class="page-back-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5"/>
+          <path d="M12 19l-7-7 7-7"/>
+        </svg>
+        Back
+      </a>
+    </div>
+
+    <footer class="footer-medical">
+      <div class="fm-wrapper">
+        <div class="fm-left">
+          <img src="/static/images/logo.png" class="fm-logo" alt="Brainalyze">
+          <span class="fm-copy">© 2025 Brainalyze</span>
+        </div>
+
+        <div class="fm-center">
+          <span class="fm-title">FOLLOW US</span>
+          <div class="fm-icons">
+            <a style="text-decoration: none; color: black;" href="https://x.com/brainalyze_co">
+              <img src="/static/images/twitter.png" alt=""><br> @brainalyze_co
+            </a>
+          </div>
+        </div>
+
+        <div class="fm-right">
+          <span class="fm-title">CONTACT</span>
+          <p class="fm-contact">+966530782404</p>
+          <p class="fm-contact">443200466@student.ksu.edu.sa</p>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+const toggleBtn = document.getElementById("toggleBtn");
+const sidebar = document.querySelector(".sidebar");
+const docheader = document.getElementById("docheader");
+const overlay = document.getElementById("sidebarOverlay");
+
+toggleBtn.addEventListener("click", () => {
+  if (window.innerWidth > 768) {
+    sidebar.classList.toggle("collapsed");
+  } else {
+    sidebar.classList.toggle("active");
+    overlay.classList.toggle("active");
+  }
+});
+overlay.addEventListener("click", () => {
+  sidebar.classList.remove("active");
+  overlay.classList.remove("active");
+});
+const tpText = document.getElementById("tp_text");
+const tpForm = document.getElementById("tp_form");
+const tpEditBtn = document.getElementById("tp_edit_btn");
+const tpCancelBtn = document.getElementById("tp_cancel_btn");
+const tpInput = document.getElementById("tp_input");
+
+if (tpEditBtn) tpEditBtn.addEventListener("click", () => {
+  if (tpText) tpText.style.display = "none";
+  tpEditBtn.style.display = "none";
+  if (tpForm) tpForm.style.display = "block";
+  if (tpInput) tpInput.focus();
+});
+if (tpCancelBtn) tpCancelBtn.addEventListener("click", () => {
+  if (tpForm) tpForm.style.display = "none";
+  if (tpText) tpText.style.display = "block";
+  if (tpEditBtn) tpEditBtn.style.display = "inline-block";
+});
+/* ── Similar Cases Modal Logic ── */
+let simLoaded = false;
+let simCasesCache = [];
+
+function _noTumorLabel(tt) {
+  const v = (tt || "").toLowerCase().replace(/[\s_]/g, "");
+  return ["notumor","none","unknown",""].includes(v) ? "Recovered" : tt;
+}
+
+function openSimModal() {
+  document.getElementById("simModalOverlay").classList.add("open");
+  document.body.style.overflow = "hidden";
+}
+function closeSimModal() {
+  document.getElementById("simModalOverlay").classList.remove("open");
+  document.body.style.overflow = "";
+}
+document.addEventListener("DOMContentLoaded", function() {
+  const ov = document.getElementById("simModalOverlay");
+  if (ov) ov.addEventListener("click", function(e) {
+    if (e.target === this) closeSimModal();
+  });
+});
+
+function _buildModalContent(cases) {
+  const body   = document.getElementById("simModalBody");
+  const footer = document.getElementById("simModalFooter");
+
+  if (!cases.length) {
+    body.innerHTML = '<div class="sim-empty" style="margin:32px 0;text-align:center;color:#8a96b8;">No similar recovered cases found for this tumor type yet.</div>';
+    footer.style.display = "none";
+    return;
+  }
+
+  let html = "";
+  cases.forEach(sc => {
+    const tk = (sc.diagnosis || "").toLowerCase().replace(/\s/g, "");
+    html += `<div class="sim-card">
+      <div class="sim-card-top">
+        <div class="sim-patient-info">
+          <div class="sim-patient-name">${sc.patient_name}</div>
+          <div class="sim-patient-meta">${sc.age} yrs &bull; ${sc.gender} &bull; ${sc.scan_count} scan${sc.scan_count !== 1 ? "s" : ""} &bull; ${sc.start_date} — ${sc.end_date}</div>
+        </div>
+        <span class="sim-tumor-badge tumor-${tk}">${sc.diagnosis}</span>
+      </div>
+      <div class="sim-criteria">`;
+    (sc.match_criteria || []).forEach(c => {
+      html += `<span class="sim-chip ${c.matched ? "matched" : "unmatched"}">
+        <span class="chip-icon">${c.matched ? "&#10003;" : "+"}</span>
+        ${c.label}: ${c.value}</span>`;
+    });
+    html += `</div><hr class="sim-divider">`;
+    if (sc.scans && sc.scans.length) {
+      html += `<div class="sim-scans-label">Scan History</div>
+        <table class="sim-scans-table"><thead><tr><th>#</th><th>Date</th><th>Tumor Type</th><th>Area (px)</th></tr></thead><tbody>`;
+      sc.scans.forEach((s, i) => {
+        html += `<tr><td>${i+1}</td><td>${s.date}</td><td>${_noTumorLabel(s.tumor_type)}</td><td>${s.area != null ? s.area : "—"}</td></tr>`;
+      });
+      html += `</tbody></table>`;
+    }
+    html += `<div class="sim-tp-block"><div class="sim-tp-label">Treatment Plan</div>
+      <div class="sim-tp-text">${sc.treatment_plan || "—"}</div></div></div>`;
+  });
+  body.innerHTML = html;
+
+  const hasTps = cases.some(sc => sc.treatment_plan && sc.treatment_plan !== "—");
+  footer.style.display = hasTps ? "flex" : "none";
+}
+
+function _populateTpSuggestions(cases) {
+  const unique_tps = [...new Set(
+    cases.map(sc => sc.treatment_plan).filter(t => t && t !== "—")
+  )];
+  const wrap  = document.getElementById("tp_suggestions_wrap");
+  const chips = document.getElementById("tp_suggestions_chips");
+  if (!unique_tps.length || !wrap || !chips) return;
+  chips.innerHTML = "";
+  unique_tps.forEach(tp => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "tp-suggestion-chip"; b.title = tp;
+    b.textContent = tp.length > 60 ? tp.slice(0, 57) + "…" : tp;
+    b.onclick = () => {
+      document.getElementById("tp_input").value = tp;
+      autoResize(document.getElementById("tp_input"));
+    };
+    chips.appendChild(b);
+  });
+  wrap.style.display = "block";
+}
+
+function acceptTpSuggestions() {
+  closeSimModal();
+  _populateTpSuggestions(simCasesCache);
+  tpText.style.display = "none";
+  tpEditBtn.style.display = "none";
+  tpForm.style.display = "block";
+  tpInput.focus();
+  tpForm.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function loadSimilarCases() {
+  const launchBtn = document.getElementById("simLaunchBtn");
+  const spinner   = document.getElementById("simSpinner");
+
+  if (simLoaded) {
+    openSimModal();
+    return;
+  }
+
+  launchBtn.disabled = true;
+  spinner.style.display = "inline-block";
+  openSimModal();
+
+  fetch("/api/similar_cases/{{ patient_id }}/{{ case_id }}")
+    .then(r => r.json())
+    .then(data => {
+      simLoaded = true;
+      simCasesCache = data.cases || [];
+      launchBtn.disabled = false;
+      spinner.style.display = "none";
+      _buildModalContent(simCasesCache);
+    })
+    .catch(() => {
+      launchBtn.disabled = false;
+      spinner.style.display = "none";
+      document.getElementById("simModalBody").innerHTML =
+        '<div class="sim-empty" style="margin:32px 0;text-align:center;color:#e74c3c;">Failed to load. Please close and try again.</div>';
+    });
+}
+function autoResize(el) {
+  el.style.height = "auto";
+  el.style.height = el.scrollHeight + "px";
+}
+if (tpInput) {
+  autoResize(tpInput);
+  tpInput.addEventListener("input", () => autoResize(tpInput));
+}
+
+const _tpFormEl = document.querySelector("#tp_form");
+if (_tpFormEl) _tpFormEl.addEventListener("submit", function () {
+  setTimeout(() => {
+    const t = document.getElementById("tpToast");
+    t.classList.remove("hidden");
+    t.classList.add("show");
+    setTimeout(() => {
+      t.classList.remove("show");
+      setTimeout(() => t.classList.add("hidden"), 300);
+    }, 2000);
+  }, 300);
+});
+
+function markAsRecovered() {
+  showConfirm({
+    icon: "✓",
+    title: "Mark as Recovered?",
+    message: "This will change the case status from Active to Recovered.",
+    confirmText: "Yes, Mark Recovered",
+    variant: "success",
+    onConfirm: _doMarkRecovered
+  });
+}
+function _doMarkRecovered() {
+  const btn = document.getElementById("markRecoveredBtn");
+  btn.disabled = true;
+  btn.textContent = "Saving...";
+  fetch("{{ url_for('mark_case_recovered', patient_id=patient_id, case_id=case_id) }}", { method: "POST" })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === "success") {
+        location.reload();
+      } else {
+        alert("Error: " + (data.message || "Unknown error"));
+        btn.disabled = false;
+        btn.textContent = "Mark as Recovered";
+      }
+    })
+    .catch(() => {
+      alert("Connection error. Please try again.");
+      btn.disabled = false;
+      btn.textContent = "Mark as Recovered";
+    });
+}
+
+// ── Case Comments ────────────────────────────────────────────────────────────
+const CASE_ID      = "{{ case_id }}";
+const CURRENT_DOC  = "{{ doctor.id }}";
+const IS_INVITED   = {{ 'true' if is_invited else 'false' }};
+
+function loadComments() {
+  fetch(`/api/case_comments/${CASE_ID}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.status !== "success") return;
+      const list  = document.getElementById("commentsList");
+      const empty = document.getElementById("commentsEmpty");
+      const badge = document.getElementById("commentsCount");
+      const items = data.comments || [];
+      badge.textContent = items.length;
+      // remove old comment nodes (keep #commentsEmpty)
+      [...list.querySelectorAll(".comment-card")].forEach(n => n.remove());
+      if (items.length === 0) {
+        empty.style.display = "block";
+        return;
+      }
+      empty.style.display = "none";
+      items.forEach(c => {
+        const card = document.createElement("div");
+        card.className = "comment-card";
+        card.setAttribute("data-id", c.id);
+        const initials = c.doctor_name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
+        const isOwn = c.doctor_id === CURRENT_DOC;
+        card.innerHTML = `
+          <div style="display:flex;align-items:flex-start;gap:12px;">
+            <div style="flex-shrink:0;width:36px;height:36px;border-radius:50%;
+                        background:#eef1ff;color:#506DCA;font-size:13px;font-weight:700;
+                        display:flex;align-items:center;justify-content:center;">
+              ${initials}
+            </div>
+            <div style="flex:1;min-width:0;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+                <div>
+                  <span style="font-size:13px;font-weight:700;color:#1e2a47;">Dr. ${c.doctor_name}</span>
+                  <span style="font-size:11px;color:#9ca3af;margin-left:8px;">${c.created_at}</span>
+                </div>
+                ${isOwn && !IS_INVITED ? `<button onclick="deleteComment('${c.id}')"
+                  style="background:none;border:none;cursor:pointer;font-size:12px;
+                         color:#ef4444;padding:2px 6px;border-radius:6px;transition:0.15s;"
+                  onmouseover="this.style.background='#fee2e2'"
+                  onmouseout="this.style.background='none'">&#128465; Delete</button>` : ""}
+              </div>
+              <div style="margin-top:6px;font-size:13px;color:#374151;line-height:1.65;
+                          background:#f8faff;border-radius:10px;padding:10px 14px;
+                          border:1px solid #eef1ff;white-space:pre-wrap;">${escHtml(c.text)}</div>
+            </div>
+          </div>`;
+        list.appendChild(card);
+      });
+      list.scrollTop = list.scrollHeight;
+    })
+    .catch(() => {});
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+function submitComment() {
+  const inp = document.getElementById("commentInput");
+  const text = (inp.value || "").trim();
+  if (!text) { inp.focus(); return; }
+  const btn = inp.nextElementSibling || document.querySelector('[onclick="submitComment()"]');
+  btn.disabled = true;
+  btn.textContent = "Posting…";
+  fetch(`/api/case_comments/${CASE_ID}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text })
+  })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.textContent = "Post Comment";
+      if (data.status === "success") {
+        inp.value = "";
+        loadComments();
+      } else {
+        alert("Could not post comment. Please try again.");
+      }
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.textContent = "Post Comment";
+      alert("Connection error. Please try again.");
+    });
+}
+
+function deleteComment(commentId) {
+  if (!confirm("Delete this comment?")) return;
+  fetch(`/api/case_comments/${CASE_ID}/${commentId}`, { method: "DELETE" })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === "success") {
+        const card = document.querySelector(`.comment-card[data-id="${commentId}"]`);
+        if (card) { card.style.opacity="0"; card.style.transition="opacity 0.25s"; setTimeout(()=>{ card.remove(); loadComments(); }, 260); }
+      } else {
+        alert("Could not delete comment.");
+      }
+    })
+    .catch(() => alert("Connection error."));
+}
+
+document.addEventListener("DOMContentLoaded", loadComments);
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+function confirmDelete(scanId, btn) {
+  showConfirm({
+    icon: "⚠",
+    title: "Delete Scan?",
+    message: "This action cannot be undone. The scan and all its data will be permanently removed.",
+    confirmText: "Yes, Delete",
+    variant: "danger",
+    onConfirm: () => _doDeleteScan(scanId, btn)
+  });
+}
+function _doDeleteScan(scanId, btn) {
+  btn.disabled = true;
+  btn.textContent = "Deleting...";
+  fetch("/api/delete_scan/" + scanId, { method: "POST" })
+    .then(r => r.json())
+    .then(data => {
+      if (data.status === "success") {
+        const card = btn.closest(".scan-card");
+        card.style.transition = "opacity 0.3s ease";
+        card.style.opacity = "0";
+        setTimeout(() => { card.remove(); location.reload(); }, 350);
+      } else {
+        alert("Failed to delete scan: " + (data.message || "Unknown error"));
+        btn.disabled = false;
+        btn.textContent = "🗑 Delete";
+      }
+    })
+    .catch(() => {
+      alert("Connection error. Please try again.");
+      btn.disabled = false;
+      btn.innerHTML = "&#128465; Delete";
+    });
+}
+  </script>
+
+<div id="tpToast" class="toast hidden">
+  Treatment updated successfully!
+</div>
+
+<script src="/static/js/nav.js"></script>
+<script src="/static/js/helpbot.js"></script>
+
+<!-- ── Similar Cases Modal ── -->
+<div class="sim-modal-overlay" id="simModalOverlay">
+  <div class="sim-modal">
+    <div class="sim-modal-head">
+      <div>
+        <h3>Similar Recovered Cases</h3>
+        <div class="sub">Recovered patients with the same tumor type — sorted by closest match</div>
+      </div>
+      <button class="sim-close-btn" onclick="closeSimModal()" title="Close">&#10005;</button>
+    </div>
+    <div class="sim-modal-body" id="simModalBody">
+      <div style="display:flex;align-items:center;justify-content:center;height:120px;color:#8a96b8;font-size:14px;gap:10px;">
+        <span class="slb-spinner" style="display:inline-block;border-color:#d0d8f0;border-top-color:#506DCA;"></span>
+        Loading…
+      </div>
+    </div>
+    <div class="sim-modal-footer" id="simModalFooter" style="display:none;">
+      <div class="footer-q">
+        Would you like to update the treatment plan?
+        <span>Based on the plans used in similar recovered cases</span>
+      </div>
+      <div class="sim-footer-btns">
+        <button class="sim-yes-btn" onclick="acceptTpSuggestions()">Yes, update plan</button>
+        <button class="sim-no-btn" onclick="closeSimModal()">No, close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Generic Confirm Modal ── -->
+<div class="popup-overlay" id="confirmModal" onclick="if(event.target===this)closeConfirmModal()">
+  <div class="popup-box">
+    <div class="confirm-icon" id="confirmIcon"></div>
+    <h2 id="confirmTitle"></h2>
+    <p id="confirmMessage"></p>
+    <div class="popup-buttons">
+      <button class="popup-cancel" onclick="closeConfirmModal()">Cancel</button>
+      <button class="popup-confirm" id="confirmActionBtn"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showConfirm({ title, message, icon, confirmText, variant, onConfirm }) {
+  document.getElementById("confirmTitle").textContent   = title   || "Are you sure?";
+  document.getElementById("confirmMessage").textContent = message || "";
+  document.getElementById("confirmIcon").textContent    = icon    || "";
+  const btn = document.getElementById("confirmActionBtn");
+  btn.textContent  = confirmText || "Confirm";
+  btn.className    = "popup-confirm " + (variant || "");
+  btn.onclick      = () => { closeConfirmModal(); onConfirm(); };
+  document.getElementById("confirmModal").style.display = "flex";
+}
+function closeConfirmModal() {
+  document.getElementById("confirmModal").style.display = "none";
+}
+</script>
+
+<!-- ── Share / Invite Modal ───────────────────────────────────────────── -->
+<div id="shareModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);
+     z-index:99999;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:20px;padding:32px;width:100%;max-width:440px;
+              margin:16px;box-shadow:0 20px 60px rgba(0,0,0,0.2);position:relative;">
+
+    <!-- Close -->
+    <button onclick="closeShareModal()"
+            style="position:absolute;top:14px;right:16px;background:none;border:none;
+                   font-size:22px;cursor:pointer;color:#9ca3af;line-height:1;">×</button>
+
+    <!-- Title -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#506DCA" stroke-width="2.2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+        <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+        <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+      </svg>
+      <span style="font-size:17px;font-weight:700;color:#1e2a47;">Share Case with a Consultant</span>
+    </div>
+    <p style="font-size:13px;color:#6a7393;margin:0 0 22px 0;">
+      The invited doctor will receive an email with a link to view this case and add clinical comments.
+    </p>
+
+    <!-- Email input -->
+    <label style="font-size:12px;font-weight:600;color:#6a7393;text-transform:uppercase;
+                  letter-spacing:0.5px;display:block;margin-bottom:6px;">Doctor's Email</label>
+    <input id="inviteEmailInput" type="email" placeholder="doctor@hospital.com"
+           style="width:100%;box-sizing:border-box;border:1.5px solid #dde3f5;border-radius:12px;
+                  padding:11px 14px;font-size:14px;font-family:'Poppins',sans-serif;
+                  color:#1e2a47;outline:none;transition:border 0.2s;"
+           onfocus="this.style.borderColor='#506DCA'"
+           onblur="this.style.borderColor='#dde3f5'"
+           onkeydown="if(event.key==='Enter') sendInvite()">
+
+    <!-- Error message -->
+    <div id="inviteError"
+         style="display:none;margin-top:8px;color:#ef4444;font-size:13px;"></div>
+
+    <!-- Send button -->
+    <button id="sendInviteBtn" onclick="sendInvite()"
+            style="width:100%;margin-top:18px;background:#506DCA;color:#fff;border:none;
+                   padding:13px;border-radius:12px;font-size:14px;font-weight:600;
+                   cursor:pointer;box-shadow:0 4px 14px rgba(80,109,202,0.3);
+                   transition:0.2s ease;font-family:'Poppins',sans-serif;">
+      Send Invite
+    </button>
+
+    <!-- Success state (hidden initially) -->
+    <div id="inviteSuccess"
+         style="display:none;margin-top:14px;background:#f0fdf4;border:1px solid #86efac;
+                border-radius:12px;padding:12px 16px;font-size:13px;color:#166534;text-align:center;">
+      ✓ Invite sent successfully! The doctor will receive an email shortly.
+    </div>
+  </div>
+</div>
+
+<script>
+const SHARE_CASE_ID = "{{ case_id }}";
+
+function openShareModal() {
+  document.getElementById("shareModal").style.display = "flex";
+  document.getElementById("inviteEmailInput").value = "";
+  document.getElementById("inviteError").style.display = "none";
+  document.getElementById("inviteSuccess").style.display = "none";
+  document.getElementById("sendInviteBtn").style.display = "block";
+  setTimeout(() => document.getElementById("inviteEmailInput").focus(), 80);
+}
+
+function closeShareModal() {
+  document.getElementById("shareModal").style.display = "none";
+}
+
+document.getElementById("shareModal").addEventListener("click", function(e) {
+  if (e.target === this) closeShareModal();
+});
+
+function sendInvite() {
+  const email = (document.getElementById("inviteEmailInput").value || "").trim();
+  const errEl = document.getElementById("inviteError");
+  errEl.style.display = "none";
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errEl.textContent = "Please enter a valid email address.";
+    errEl.style.display = "block";
+    return;
+  }
+
+  const btn = document.getElementById("sendInviteBtn");
+  btn.disabled = true;
+  btn.textContent = "Sending…";
+
+  fetch(`/api/invite_case/${SHARE_CASE_ID}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  })
+    .then(r => r.json())
+    .then(data => {
+      btn.disabled = false;
+      btn.textContent = "Send Invite";
+      if (data.status === "success") {
+        btn.style.display = "none";
+        document.getElementById("inviteSuccess").style.display = "block";
+      } else {
+        errEl.textContent = data.message || "Could not send invite. Please try again.";
+        errEl.style.display = "block";
+      }
+    })
+    .catch(() => {
+      btn.disabled = false;
+      btn.textContent = "Send Invite";
+      errEl.textContent = "Connection error. Please try again.";
+      errEl.style.display = "block";
+    });
+}
+
+const logoutBtn = document.getElementById("logoutBtn");
+const logoutPopup = document.getElementById("logoutPopup");
+logoutBtn.addEventListener("click", function(event) {
+  event.preventDefault();
+  logoutPopup.style.display = "flex";
+});
+document.getElementById("cancelLogout").addEventListener("click", () => {
+  logoutPopup.style.display = "none";
+});
+document.getElementById("confirmLogout").addEventListener("click", () => {
+  logoutPopup.style.display = "none";
+  window.location.href = "{{ url_for('logout') }}";
+});
+logoutPopup.addEventListener("click", function(event) {
+  if (event.target === logoutPopup) logoutPopup.style.display = "none";
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Brainalyze | Patient Profile</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/patient-profile.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+
+<body>
+ <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <aside class="sidebar">
+    <div class="brand" onclick="window.location.href='{{ url_for('home') }}'">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Brainalyze"><span>Brainalyze</span>
+    </div>
+    <nav class="nav">
+      <a href="{{ url_for('home') }}"><img src="{{ url_for('static', filename='images/home-icon.jpg') }}"
+          alt=""><span>Home</span></a>
+
+      <a href="{{ url_for('patients') }}"><img src="{{ url_for('static', filename='images/patient-icon.png') }}"
+          alt=""><span>Patients</span></a>
+      <a href="{{ url_for('dashboard') }}">
+      <img src="{{ url_for('static', filename='images/home-icon.jpg') }}"><span>Dashboard</span>
+    </a>
+        <a href="{{ url_for('reports') }}">
+      <img src="{{ url_for('static', filename='images/patient-icon.png') }}"><span>Reports</span>
+    </a>
+        <a href="{{ url_for('profile') }}"><img src="{{ url_for('static', filename='images/user-icon.jpg') }}"
+          alt=""><span>Profile</span></a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="#" id="logoutBtn" class="logout">
+        <span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <div class="popup-overlay" id="logoutPopup">
+    <div class="popup-box">
+      <h2>Confirm Logout</h2>
+      <p>Are you sure you want to log out?</p>
+      <div class="popup-buttons">
+        <button class="popup-cancel" id="cancelLogout">Cancel</button>
+        <button class="popup-confirm" id="confirmLogout">Yes, Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-wrapper">
+
+    <div id="docheader">
+      <div style="display:flex; align-items:center; gap:15px;">
+        <button class="toggle-btn" id="toggleBtn">
+          <img src="{{ url_for('static', filename='images/sidebar_icon.png') }}" alt="menu" width="32" height="32" style="object-fit: contain;">
+        </button>
+        </button>
+        <span id="pageTitle">Patient Profile</span>
+      </div>
+
+      <div class="doctor-info">
+        <div class="doctor-details">
+          <h2>Dr. {{ doctor.name }} </h2>
+          <p>{{ doctor.email }}</p>
+        </div>
+        <img src="{{ doctor.ProfilePicture if doctor.ProfilePicture else url_for('static', filename='images/user.png') }}" class="profile-pic" alt="Profile" onclick="window.location.href='{{ url_for('profile') }}'">
+      </div>
+    </div>
+
+    <div class="main">
+
+      <div class="bc">
+        <a href="{{ url_for('patients') }}">Patients</a>
+        <span class="sep">›</span>
+        <span id="bc-name">{{ patient.name or 'Patient' }}</span>
+      </div>
+
+      <div class="card patient-header">
+
+        <div class="ph-left">
+          <div class="avatar" id="avatar" data-name="{{ patient.name }}" {% if patient.ProfilePicture and patient.ProfilePicture !='/static/images/user.png' %} style="background-image:url('{{ patient.ProfilePicture }}'); color:transparent;" {% endif %}></div>
+
+          <div class="ph-info">
+            <h1 class="ph-name">{{ patient.name }}</h1>
+            <div class="ph-id">Patient ID: {{ patient.masked_id }}</div>
+
+            <div class="ph-tags">
+              <span class="ph-tag">{{ patient.age }} years</span>
+              <span class="ph-tag">{{ patient.gender }}</span>
+            </div>
+
+            <div class="ph-phone">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                  d="M22 16.92v2a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 5.18 2 2 0 0 1 4.11 3h2a2 2 0 0 1 2 1.72c.1.76.27 1.5.5 2.2a2 2 0 0 1-.45 2.11L7.1 10.9a16 16 0 0 0 6 6l1.87-1.07a2 2 0 0 1 2.11-.05c.71.23 1.45.4 2.21.5A2 2 0 0 1 22 16.92z" />
+              </svg>
+              <span>{{ patient.phone }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="ph-right">
+
+<button class="ph-edit-btn" id="openEditModal"
+  style="background:#506DCA; color:white; border:none; padding:10px 20px; border-radius:12px; cursor:pointer; font-size:14px; display:flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(80,109,202,0.25);">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+         stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9" />
+        <path d="M16.5 3.5l4 4L7 21H3v-4L16.5 3.5z" />
+    </svg>
+    Edit Profile
+</button>
+
+          <div class="ph-box">
+            <div class="ph-box-title">Last Scan:</div>
+
+            {% if cases and cases[-1].last_update %}
+            <div class="ph-box-value">
+              {{ cases[-1].last_update }}
+            </div>
+            {% else %}
+            <div class="ph-box-value">No scans yet</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <style>
+        .tabs-container {
+          display: flex;
+          gap: 10px;
+          margin: 20px 0 10px;
+        }
+
+        .tabs-container .tab {
+          background: #ffffff;
+          border: 1.8px solid #ccd4ff;
+          color: #506DCA;
+          padding: 10px 16px;
+          border-radius: 10px;
+          cursor: pointer;
+          font-size: 14px;
+          box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+          transition: all .25s ease;
+          text-decoration: none;
+        }
+
+        .tabs-container .tab:hover {
+          background: #f3f6ff;
+          border-color: #aebfff;
+        }
+
+        .tabs-container .tab.active {
+          background: #506DCA;
+          color: #fff;
+          border-color: #506DCA;
+          box-shadow: 0 3px 8px rgba(80, 109, 202, .25);
+        }
+      </style>
+
+      <div class="tabs-container">
+        <button class="tab active" data-tab="cases">Cases</button>
+        <button class="tab" data-tab="notes">Medical Notes</button>
+      </div>
+
+      <div class="card" style="margin-top:0;">
+        <div class="section" id="tab-cases">
+
+          <div class="mri-toolbar" style="margin-bottom:14px;">
+            <div style="color:#5b6486; font-size:15px;">
+              Cases for {{ patient.name }}
+            </div>
+            <button class="btn" id="addCaseBtn" type="button">+ Add Case</button>
+          </div>
+
+          {% if cases %}
+          {% for case in cases %}
+          <div class="case-card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div class="case-header">
+                Case {{ case.display_id }} — {{ case.diagnosis }}
+              </div>
+            </div>
+
+            <div class="case-details" style="margin-top:14px;">
+              <div><strong>Status:</strong> {{ case.status }}</div>
+              <div><strong>Last Update:</strong> {{ case.last_update }}</div>
+              <div style="margin-top:6px;">
+                <strong>Treatment Plan:</strong> {{ case.treatment_plan }}
+              </div>
+
+<div class="case-actions-col">
+    <a class="case-view-btn"
+       href="{{ url_for('view_case', case_id=case.id, patient_id=patient.patient_id) }}">
+       View Case
+    </a>
+
+    <form id="del-case-{{ case.id }}"
+          action="{{ url_for('delete_case', patient_id=patient.patient_id, case_id=case.id) }}"
+          method="POST">
+      <button type="button" class="case-delete-btn"
+        onclick="showCaseDeleteConfirm('del-case-{{ case.id }}', 'Case {{ loop.index }}')">
+        Delete
+      </button>
+    </form>
+</div>
+
+            </div>
+          </div>
+
+          {% endfor %}
+          {% else %}
+          <div class="pill" style="margin-top:10px;">
+            No cases created for this patient yet.
+          </div>
+          {% endif %}
+
+        </div>
+
+        <div class="section hidden" id="tab-notes">
+          {% if patient.MedicalNotes %}
+          <div class="notes-box">{{ patient.MedicalNotes }}</div>
+          {% else %}
+          <div class="pill">No medical notes yet.</div>
+          {% endif %}
+        </div>
+        <!-- MEDICAL NOTES SECTION -->
+        <div class="section hidden" id="tab-notes">
+          {% if patient.MedicalNotes %}
+          <div class="notes-box">{{ patient.MedicalNotes }}</div>
+          {% else %}
+          <div class="pill">No medical notes yet.</div>
+          {% endif %}
+        </div>
+      </div>
+
+
+      <!-- MEDICAL NOTES SECTION -->
+      <div class="section hidden" id="tab-notes">
+        {% if patient.MedicalNotes %}
+        <div class="notes-box">{{ patient.MedicalNotes }}</div>
+        {% else %}
+        <div class="pill">No medical notes yet.</div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="page-back-wrap">
+      <a href="{{ url_for('patients') }}" class="page-back-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5"/>
+          <path d="M12 19l-7-7 7-7"/>
+        </svg>
+        Back
+      </a>
+    </div>
+    <footer class="footer-medical">
+      <div class="fm-wrapper">
+        <div class="fm-left">
+          <img src="/static/images/logo.png" class="fm-logo" alt="Brainalyze">
+          <span class="fm-copy">© 2025 Brainalyze</span>
+        </div>
+
+        <div class="fm-center">
+          <span class="fm-title">FOLLOW US</span>
+          <div class="fm-icons">
+            <a style="text-decoration: none; color: black;" href="https://x.com/brainalyze_co">
+              <img src="/static/images/twitter.png" alt=""><br> @brainalyze_co
+            </a>
+          </div>
+        </div>
+
+        <div class="fm-right">
+          <span class="fm-title">CONTACT</span>
+          <p class="fm-contact">+966530782404</p>
+          <p class="fm-contact">443200466@student.ksu.edu.sa</p>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <div class="modal-overlay" id="editPatientModal">
+    <div class="modal-box">
+
+      <div class="modal-header">
+        <h2>Edit Patient Profile</h2>
+        <button type="button" class="modal-close" id="closeEditModal">&times;</button>
+      </div>
+      <form action="{{ url_for('patient_profile', patient_id=patient.patient_id) }}" method="POST">
+
+        <div class="modal-body">
+          <div class="form-row">
+            <label>Full Name</label>
+            <input name="name" type="text" id="edit-name" value="{{ patient.name }}" data-original="{{ patient.name }}" required>
+          </div>
+
+          <div class="form-row two-cols">
+            <div>
+              <label>Age</label>
+              <input name="age" type="number" id="edit-age" value="{{ patient.age }}" data-original="{{ patient.age }}" required min="0" max="120">
+            </div>
+            <div>
+              <label>Gender</label>
+              <select name="gender" id="edit-gender" data-original="{{ patient.gender }}">
+                <option value="Male" {% if patient.gender=='Male' %}selected{% endif %}>Male</option>
+                <option value="Female" {% if patient.gender=='Female' %}selected{% endif %}>Female</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label>Phone</label>
+
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="background:#eef2ff; padding:10px 14px; border-radius:10px; border:1px solid #ccd4ff; color:#506DCA; font-size:14px; white-space:nowrap;">
+                +966
+              </span>
+
+              <input type="tel" name="phone" id="edit-phone" placeholder="5XXXXXXXX"
+                value="{{ patient.phone[4:] if patient.phone.startswith('+966') else patient.phone }}" maxlength="9"
+                data-original="{{ patient.phone }}" required
+                style="flex:1; border:1px solid #ccd4ff; padding:10px 12px; border-radius:10px;">
+            </div>
+
+          </div>
+
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn secondary" id="cancelEditBtn">Cancel</button>
+          <button type="submit" class="btn">Save Changes</button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="caseModal">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2>Create New Case</h2>
+        <button type="button" class="modal-close" id="closeCaseModal">&times;</button>
+      </div>
+
+      <form action="{{ url_for('create_case', patient_id=patient.patient_id) }}" method="POST"
+        enctype="multipart/form-data">
+
+        <div class="modal-body">
+
+          <div class="form-row">
+            <label for="treatment_plan">Treatment Plan (optional)</label>
+            <textarea id="treatment_plan" name="treatment_plan" rows="3"
+              placeholder="e.g., Chemotherapy every 2 weeks"></textarea>
+          </div>
+
+          <div class="form-row">
+            <label for="scan_date">MRI Scan Date</label>
+            <input
+              type="date"
+              id="scan_date"
+              name="scan_date"
+              value="{{ current_date_iso }}"
+              max="{{ current_date_iso }}"
+              required
+            >
+          </div>
+
+          <div class="form-row">
+            <label for="mri_file">MRI Scan (required)</label>
+
+            <!-- Note shown above box when NIfTI/ZIP selected -->
+            <p id="niftiNoteText" style="display:none; margin:0 0 6px; font-size:12px; color:#9ca3af;">
+              This file will be analysed as a full 3D brain volume. Classification is set to Glioma.
+            </p>
+
+            <div class="upload-box" id="caseUploadBox" onclick="document.getElementById('mri_file').click()">
+
+              <!-- ① Empty state — icon + hint -->
+              <div id="uploadEmptyState" class="upload-content">
+                <i class="fa-solid fa-cloud-arrow-up" style="font-size:34px; color:#7c8cc8; margin-bottom:6px;"></i>
+                <p id="fileName" style="margin:0; font-size:14px; color:#5b6486;">Drop file here or click to upload</p>
+              </div>
+
+              <!-- ② 2D image preview (PNG/JPG) -->
+              <div id="upload2dPreview" style="display:none; text-align:center;">
+                <img id="upload2dImg" src="" alt="preview" style="max-width:100%; max-height:130px; border-radius:8px;">
+                <p id="upload2dName" style="margin-top:6px; font-size:13px; color:#5b6486;"></p>
+              </div>
+
+              <!-- ③ 3D NIfTI/ZIP — file info + slices all inside box -->
+              <div id="casePreview3d" style="display:none;" onclick="event.stopPropagation()">
+                <!-- File info row -->
+                <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px; text-align:left;">
+                  <i class="fa-solid fa-file-medical" style="color:#2563eb; font-size:20px; flex-shrink:0;"></i>
+                  <div style="min-width:0; flex:1;">
+                    <div style="font-size:11px; color:#6b7280; font-weight:500; margin-bottom:1px;">Selected file</div>
+                    <div id="case3dFileName" style="font-size:12px; font-weight:700; color:#1f2240; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">—</div>
+                  </div>
+                  <i class="fa-solid fa-circle-check" style="color:#22c55e; font-size:16px; flex-shrink:0;"></i>
+                </div>
+                <!-- Spinner -->
+                <div id="casePreview3dLoading" style="display:none; text-align:center; padding:8px 0;">
+                  <div style="display:inline-flex; align-items:center; gap:8px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:8px 16px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="animation:spin3dC 0.9s linear infinite; flex-shrink:0;">
+                      <circle cx="12" cy="12" r="10" stroke="#bae6fd" stroke-width="3"/>
+                      <path d="M12 2a10 10 0 0 1 10 10" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+                    </svg>
+                    <span style="font-size:12px; color:#374151;">Extracting volume slices…</span>
+                  </div>
+                </div>
+                <!-- Axial / Coronal / Sagittal panels -->
+                <div id="casePreview3dPanels" style="display:none; grid-template-columns:1fr 1fr 1fr; gap:6px;">
+                  <div style="background:#050810; border-radius:8px; overflow:hidden; border:1px solid #1e293b;">
+                    <div style="background:#7c1d1d; padding:4px 8px; font-size:9px; font-weight:700; color:#fca5a5; letter-spacing:.06em;">AXIAL</div>
+                    <div style="min-height:90px; display:flex; align-items:center; justify-content:center; background:#080808;">
+                      <img id="case-prev3d-axial" src="" alt="axial" style="width:100%; display:none; object-fit:contain;">
+                    </div>
+                  </div>
+                  <div style="background:#050810; border-radius:8px; overflow:hidden; border:1px solid #1e293b;">
+                    <div style="background:#14532d; padding:4px 8px; font-size:9px; font-weight:700; color:#86efac; letter-spacing:.06em;">CORONAL</div>
+                    <div style="min-height:90px; display:flex; align-items:center; justify-content:center; background:#080808;">
+                      <img id="case-prev3d-coronal" src="" alt="coronal" style="width:100%; display:none; object-fit:contain;">
+                    </div>
+                  </div>
+                  <div style="background:#050810; border-radius:8px; overflow:hidden; border:1px solid #1e293b;">
+                    <div style="background:#1e3a5f; padding:4px 8px; font-size:9px; font-weight:700; color:#93c5fd; letter-spacing:.06em;">SAGITTAL</div>
+                    <div style="min-height:90px; display:flex; align-items:center; justify-content:center; background:#080808;">
+                      <img id="case-prev3d-sagittal" src="" alt="sagittal" style="width:100%; display:none; object-fit:contain;">
+                    </div>
+                  </div>
+                </div><!-- /casePreview3dPanels -->
+                <style>@keyframes spin3dC { to { transform:rotate(360deg); } }</style>
+              </div><!-- /casePreview3d -->
+
+            </div><!-- /upload-box -->
+
+            <input type="file" id="mri_file" name="mri_file" accept="image/*,.nii,.nii.gz,.zip" required style="display:none;">
+
+          </div><!-- /form-row -->
+
+        </div><!-- /modal-body -->
+
+        <div class="modal-footer">
+          <button type="button" class="btn secondary" id="cancelCaseBtn">Cancel</button>
+          <button type="submit" class="btn">Create Case</button>
+        </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  </div>
+  <script>
+    document.getElementById("edit-phone").addEventListener("input", function () {
+      this.value = this.value.replace(/\D/g, "");
+      if (this.value.length > 9) {
+        this.value = this.value.slice(0, 9);
+      }
+    });
+
+    const toggleBtn = document.getElementById("toggleBtn");
+    const sidebar = document.querySelector(".sidebar");
+    const docheader = document.getElementById("docheader");
+    const overlay = document.getElementById("sidebarOverlay");
+
+    toggleBtn.addEventListener("click", () => {
+      if (window.innerWidth > 768) {
+        sidebar.classList.toggle("collapsed");
+      } else {
+        sidebar.classList.toggle("active");
+        overlay.classList.toggle("active");
+      }
+    });
+
+    overlay.addEventListener("click", () => {
+      sidebar.classList.remove("active");
+      overlay.classList.remove("active");
+    });
+
+    const header = document.getElementById("toggleHeader");
+    const currentPath = window.location.pathname;
+
+    const isPatientProfile = /\/patients\/[^/]+\/profile/.test(currentPath);
+    if (isPatientProfile) {
+      pageTitle.textContent = "Patient Profile";
+
+    } else if (currentPath.includes("patients")) {
+      pageTitle.textContent = "Patients";
+
+    } else if (currentPath.includes("profile")) {
+      pageTitle.textContent = "Profile";
+    } else {
+      pageTitle.textContent = "Home";
+    }
+
+    (function () {
+      const av = document.getElementById('avatar');
+      if (!av) return;
+            const hasInline =
+        av.style.backgroundImage && av.style.backgroundImage !== 'none';
+      const hasComputed =
+        getComputedStyle(av).backgroundImage !== 'none';
+
+      if (!(hasInline || hasComputed)) {
+        const name = (av.dataset.name || '').trim();
+        const initials = name
+          ? name.split(/\s+/).slice(0, 2).map(w => w[0].toUpperCase()).join('')
+          : 'NA';
+        av.textContent = initials;
+      } else {
+        av.textContent = '';
+      }
+    })();
+
+    const tabs = document.querySelectorAll('.tab');
+    tabs.forEach(t => {
+      t.addEventListener('click', () => {
+        tabs.forEach(x => x.classList.remove('active'));
+        t.classList.add('active');
+        const id = t.dataset.tab;
+        document.getElementById('tab-cases').classList.toggle('hidden', id !== 'cases');
+        document.getElementById('tab-notes').classList.toggle('hidden', id !== 'notes');
+      });
+    });
+
+    document.getElementById("cancelEditBtn").addEventListener("click", function () {
+      document.getElementById("edit-name").value =
+        document.getElementById("edit-name").dataset.original;
+      document.getElementById("edit-age").value =
+        document.getElementById("edit-age").dataset.original;
+      document.getElementById("edit-gender").value =
+        document.getElementById("edit-gender").dataset.original;
+
+      let originalPhone =
+        document.getElementById("edit-phone").dataset.original;
+
+      if (originalPhone.startsWith("+966")) {
+        originalPhone = originalPhone.slice(4);
+      }
+      document.getElementById("edit-phone").value = originalPhone;
+      document.getElementById("editPatientModal").classList.remove("show");
+    });
+
+    const logoutBtn = document.getElementById("logoutBtn");
+    const logoutPopup = document.getElementById("logoutPopup");
+    const confirmLogout = document.getElementById("confirmLogout");
+    const cancelLogout = document.getElementById("cancelLogout");
+
+    logoutBtn.addEventListener("click", function (event) {
+      event.preventDefault();
+      logoutPopup.style.display = "flex";
+    });
+
+    cancelLogout.addEventListener("click", function () {
+      logoutPopup.style.display = "none";
+    });
+
+    confirmLogout.addEventListener("click", function () {
+      logoutPopup.style.display = "none";
+      sessionStorage.clear();
+      localStorage.clear();
+      window.location.href = "{{ url_for('logout') }}";
+    });
+
+    window.addEventListener("click", function (event) {
+      if (event.target === logoutPopup) {
+        logoutPopup.style.display = "none";
+      }
+    });
+
+    const addCaseBtn = document.getElementById("addCaseBtn");
+    const caseModal = document.getElementById("caseModal");
+    const closeCaseModal = document.getElementById("closeCaseModal");
+    const cancelCaseBtn = document.getElementById("cancelCaseBtn");
+
+    if (addCaseBtn && caseModal) {
+      const openModal = () => caseModal.classList.add("show");
+      const closeModal = () => caseModal.classList.remove("show");
+
+      addCaseBtn.addEventListener("click", openModal);
+      closeCaseModal.addEventListener("click", closeModal);
+      cancelCaseBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        closeModal();
+      });
+
+      window.addEventListener("click", (event) => {
+        if (event.target === caseModal) {
+          closeModal();
+        }
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const editModal = document.getElementById("editPatientModal");
+      const openEditBtn = document.getElementById("openEditModal");
+      const closeEditBtn = document.getElementById("closeEditModal");
+      const cancelEditBtn = document.getElementById("cancelEditBtn");
+
+      if (!editModal || !openEditBtn) {
+        return;
+      }
+
+      function openEditModalFunc() {
+        editModal.classList.add("show");
+      }
+
+      function closeEditModalFunc() {
+        editModal.classList.remove("show");
+      }
+
+      openEditBtn.addEventListener("click", openEditModalFunc);
+      closeEditBtn.addEventListener("click", closeEditModalFunc);
+      cancelEditBtn.addEventListener("click", closeEditModalFunc);
+
+      window.addEventListener("click", (e) => {
+        if (e.target === editModal) closeEditModalFunc();
+      });
+
+    });
+
+    document.getElementById("edit-phone").addEventListener("input", function () {
+      this.value = this.value.replace(/\s+/g, "");
+    });
+
+    document.getElementById("edit-phone").addEventListener("input", function () {
+      this.value = this.value.replace(/\D/g, "");
+    });
+
+    document.querySelector("#editPatientModal form").addEventListener("submit", function (e) {
+      const phoneField = document.getElementById("edit-phone");
+      let raw = phoneField.value.trim();
+      raw = raw.replace(/\D/g, "");
+
+      if (raw.length !== 9) {
+        alert("رقم الجوال يجب أن يكون 9 أرقام.");
+        e.preventDefault();
+        return;
+      }
+
+      if (!raw.startsWith("5")) {
+        alert("رقم الجوال يجب أن يبدأ بالرقم 5.");
+        e.preventDefault();
+        return;
+      }
+
+      const fullPhone = "+966" + raw;
+
+      const hidden = document.createElement("input");
+      hidden.type = "hidden";
+      hidden.name = "phone";
+      hidden.value = fullPhone;
+
+      this.appendChild(hidden);
+
+      setTimeout(() => {
+        const t = document.getElementById("successToast");
+        t.classList.remove("hidden");
+        t.classList.add("show");
+
+        setTimeout(() => {
+          t.classList.remove("show");
+          setTimeout(() => t.classList.add("hidden"), 300);
+        }, 2000);
+      }, 300);
+
+    });
+
+    document.getElementById("mri_file").addEventListener("change", function () {
+      const file = this.files[0];
+      if (!file) return;
+
+      const noteText   = document.getElementById("niftiNoteText");
+      const emptyState = document.getElementById("uploadEmptyState");
+      const prev2d     = document.getElementById("upload2dPreview");
+      const prev3d     = document.getElementById("casePreview3d");
+      const loadingEl  = document.getElementById("casePreview3dLoading");
+      const panelsEl   = document.getElementById("casePreview3dPanels");
+
+      const fname = file.name.toLowerCase();
+      const isNiftiOrZip = fname.endsWith('.nii') || fname.endsWith('.nii.gz') || fname.endsWith('.zip');
+
+      // Reset all states
+      if (emptyState) emptyState.style.display = 'none';
+      if (prev2d)     prev2d.style.display     = 'none';
+      if (prev3d)     prev3d.style.display     = 'none';
+
+      if (isNiftiOrZip) {
+        if (noteText) noteText.style.display = 'block';
+
+        // Show 3D state inside box
+        if (prev3d) prev3d.style.display = 'block';
+        const fnEl = document.getElementById('case3dFileName');
+        if (fnEl) fnEl.textContent = file.name;
+
+        // Show spinner, hide panels
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (panelsEl)  panelsEl.style.display  = 'none';
+
+        const previewForm = new FormData();
+        previewForm.append('file', file);
+        fetch('/api/nifti_preview', { method: 'POST', body: previewForm })
+          .then(r => r.json())
+          .then(d => {
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (panelsEl)  panelsEl.style.display  = 'grid';
+            const axImg  = document.getElementById('case-prev3d-axial');
+            const corImg = document.getElementById('case-prev3d-coronal');
+            const sagImg = document.getElementById('case-prev3d-sagittal');
+            if (d.axial    && axImg)  { axImg.src  = d.axial;    axImg.style.display  = 'block'; }
+            if (d.coronal  && corImg) { corImg.src = d.coronal;  corImg.style.display = 'block'; }
+            if (d.sagittal && sagImg) { sagImg.src = d.sagittal; sagImg.style.display = 'block'; }
+            if (d.depth && d.height && d.width) {
+              const fn2 = document.getElementById('case3dFileName');
+              if (fn2) fn2.textContent = `${file.name}  (${d.depth}×${d.height}×${d.width})`;
+            }
+          })
+          .catch(err => {
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (panelsEl)  panelsEl.style.display  = 'grid';
+            console.warn('[case preview3d]', err);
+          });
+      } else {
+        if (noteText) noteText.style.display = 'none';
+
+        // Show 2D image preview inside box
+        if (prev2d) prev2d.style.display = 'block';
+        const url = URL.createObjectURL(file);
+        const img2d  = document.getElementById('upload2dImg');
+        const name2d = document.getElementById('upload2dName');
+        if (img2d)  img2d.src          = url;
+        if (name2d) name2d.textContent  = file.name;
+      }
+    });
+
+    document.querySelector("#caseModal form").addEventListener("submit", function () {
+      setTimeout(() => {
+        const t = document.getElementById("caseToast");
+        t.classList.remove("hidden");
+        t.classList.add("show");
+
+        setTimeout(() => {
+          t.classList.remove("show");
+          setTimeout(() => t.classList.add("hidden"), 300);
+        }, 2000);
+      }, 300);
+    });
+
+  </script>
+
+<div id="successToast" class="toast hidden">
+   Saved successfully!
+</div>
+<div id="caseToast" class="toast hidden">
+   Case created successfully!
+</div>
+
+<!-- ── Generic Confirm Modal ── -->
+<div class="popup-overlay" id="confirmModal" onclick="if(event.target===this)closeConfirmModal()">
+  <div class="popup-box">
+    <div class="confirm-icon" id="confirmIcon"></div>
+    <h2 id="confirmTitle"></h2>
+    <p id="confirmMessage"></p>
+    <div class="popup-buttons">
+      <button class="popup-cancel" onclick="closeConfirmModal()">Cancel</button>
+      <button class="popup-confirm" id="confirmActionBtn"></button>
+    </div>
+  </div>
+</div>
+
+<script>
+function showConfirm({ title, message, icon, confirmText, variant, onConfirm }) {
+  document.getElementById("confirmTitle").textContent   = title   || "Are you sure?";
+  document.getElementById("confirmMessage").textContent = message || "";
+  document.getElementById("confirmIcon").textContent    = icon    || "";
+  const btn = document.getElementById("confirmActionBtn");
+  btn.textContent = confirmText || "Confirm";
+  btn.className   = "popup-confirm " + (variant || "");
+  btn.onclick     = () => { closeConfirmModal(); onConfirm(); };
+  document.getElementById("confirmModal").style.display = "flex";
+}
+function closeConfirmModal() {
+  document.getElementById("confirmModal").style.display = "none";
+}
+function showCaseDeleteConfirm(formId, caseLabel) {
+  showConfirm({
+    icon: "⚠",
+    title: "Delete Case?",
+    message: `This will permanently delete "${caseLabel}" including all its scans and data. This cannot be undone.`,
+    confirmText: "Yes, Delete",
+    variant: "danger",
+    onConfirm: () => document.getElementById(formId).submit()
+  });
+}
+</script>
+
+<script src="/static/js/nav.js"></script>
+<script src="/static/js/helpbot.js"></script>
+</body>
+</html>

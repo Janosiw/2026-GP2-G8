@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<!--
+  2FA_Prosses.html  (Two-Factor Authentication — OTP Verification)
+  =================================================================
+  This page is shown AFTER a successful email/password login.
+  It completes the second authentication factor using a 6-digit
+  SMS code sent to the user's registered phone number.
+
+  FLOW:
+    1. The login page (register_login.html) stores three values in
+       sessionStorage before redirecting here:
+         - verificationId  : Firebase session token for the SMS challenge
+         - uid             : Firebase Auth user ID
+         - phoneNumber     : the user's registered phone (used for resend)
+
+    2. The user enters the 6-digit OTP received via SMS.
+
+    3. On "Verify":
+         a. PhoneAuthProvider.credential() builds a Firebase credential
+            from the verificationId + OTP code.
+         b. linkWithCredential() links the phone to the current account.
+            If already linked, reauthenticateWithCredential() is used instead.
+         c. Firestore document for the user is updated: TwoFactorEnabled = true
+         d. User is redirected to /login_from_firebase?uid=... which creates
+            the server-side session and sends the user to the home page.
+
+    4. On "Resend":
+         a. A new invisible reCAPTCHA is created.
+         b. A new SMS OTP is sent to the same phone number.
+         c. The new verificationId is saved in sessionStorage.
+-->
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Brainalyze | OTP Code</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset & base font ── */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', 'Cairo', 'Arial', sans-serif;
+    }
+
+    /* ── Full-screen centered layout ── */
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f7faff;
+      position: relative;
+    }
+
+    /* ── Logo in the top-left corner ── */
+    .site-logo {
+      position: absolute;
+      top: 25px;
+      left: 25px;
+      width: 90px;
+      height: auto;
+      cursor: pointer;
+      transition: transform .3s ease, filter .3s ease;
+    }
+    .site-logo:hover {
+      transform: scale(1.05);
+      filter: brightness(1.1);
+    }
+
+    /* ── Card holding the OTP form ── */
+    .container {
+      position: relative;
+      background: #f2f5fb;
+      padding: 50px 40px 40px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, .2);
+      text-align: center;
+      width: 340px;
+    }
+
+    h2 { color: #1e2a47; margin-bottom: 10px; }
+    p  { color: #444; margin-bottom: 20px; font-size: .9rem; }
+
+    /* ── Six individual OTP digit boxes ── */
+    .code-boxes {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .code-boxes input {
+      width: 40px;
+      height: 45px;
+      text-align: center;
+      border: 1px solid #a5b6d3;
+      border-radius: 8px;
+      font-size: 1.2rem;
+    }
+    .code-boxes input:focus {
+      border-color: #1e2a47;
+      box-shadow: 0 0 6px rgba(30, 42, 71, .3);
+      outline: none;
+    }
+
+    /* ── Verify button ── */
+    button {
+      width: 100%;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 10px;
+      background: #4f67d3;
+      color: white;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: .3s;
+    }
+    button:hover    { background: #1e40af; }
+
+    /* ── Feedback message below the button ── */
+    .message { font-size: .9rem; margin-top: 10px; }
+
+    /* ── "Resend" link ── */
+    .resend     { margin-top: 15px; font-size: .85rem; }
+    .resend a   { color: #506DCA; cursor: pointer; }
+    .resend:hover { text-decoration: underline; }
+
+    /* ── Back arrow to return to the login page ── */
+    .form-back-arrow {
+      position: absolute;
+      top: 18px;
+      left: 20px;
+      font-size: 1.4rem;
+      color: #1e2a47;
+      text-decoration: none;
+      font-weight: bold;
+      transition: all .3s ease;
+    }
+    .form-back-arrow:hover {
+      transform: translateX(-3px);
+      color: #16294e;
+    }
+
+    /* ── Verify button extra states ── */
+    #verifyBtn         { position: relative; overflow: hidden; }
+    #verifyBtn:hover   { background: #395bb9; }
+    #verifyBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    /* ── Spinner shown inside the button while verifying ── */
+    .btn-loading-spinner {
+      width: 18px;
+      height: 18px;
+      border: 3px solid #ffffff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: auto;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Logo: click to go to the landing page -->
+  <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Brainalyze Logo"
+    class="site-logo" onclick="window.location.href='{{ url_for('index') }}'">
+
+  <div class="container">
+    <!-- Back arrow returns the user to the Log In panel -->
+    <a href="{{ url_for('register_login') }}#login" class="form-back-arrow">←</a>
+
+    <h2>Verify Code</h2>
+    <p>Please enter the 6-digit code sent to your phone.</p>
+
+    <!-- Six individual input boxes for each OTP digit -->
+    <div class="code-boxes">
+      <input type="text" maxlength="1">
+      <input type="text" maxlength="1">
+      <input type="text" maxlength="1">
+      <input type="text" maxlength="1">
+      <input type="text" maxlength="1">
+      <input type="text" maxlength="1">
+    </div>
+
+    <button id="verifyBtn">Verify</button>
+
+    <!-- Inline feedback (error / success) -->
+    <div id="inLineMessage" class="message"></div>
+
+    <p class="resend">Didn't receive a code? <a id="resendLink">Resend</a></p>
+  </div>
+
+  <!-- ── Non-module script: keyboard navigation between OTP boxes ── -->
+  <script>
+    const inputs = document.querySelectorAll('.code-boxes input');
+
+    // ── Helper: swap button text with a loading spinner ──
+    function setLoading(btn, isLoading) {
+      if (isLoading) {
+        btn.disabled = true;
+        btn.dataset.originalText = btn.innerHTML;
+        btn.innerHTML = `<div class="btn-loading-spinner"></div>`;
+      } else {
+        btn.disabled = false;
+        btn.innerHTML = btn.dataset.originalText;
+      }
+    }
+
+    // Auto-advance to the next box after a digit is typed,
+    // and go back on Backspace when the current box is empty.
+    inputs.forEach((input, index) => {
+      input.addEventListener('input', () => {
+        if (input.value.length === 1 && index < inputs.length - 1) {
+          inputs[index + 1].focus(); // move forward
+        }
+      });
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !input.value && index > 0) {
+          inputs[index - 1].focus(); // move backward
+        }
+      });
+    });
+  </script>
+
+  <!-- ── Firebase ES module: OTP verification and resend logic ── -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import {
+      getAuth,
+      PhoneAuthProvider,
+      linkWithCredential,
+      reauthenticateWithCredential,
+      RecaptchaVerifier
+    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+    import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    // Firebase project configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyC5bb6M-sEVu9JL7mkVLFvkv44k8JIG9Es",
+      authDomain: "brainalyze.firebaseapp.com",
+      projectId: "brainalyze",
+      storageBucket: "brainalyze.firebasestorage.app",
+      messagingSenderId: "930694068293",
+      appId: "1:930694068293:web:72fd905080497218010b2c",
+      measurementId: "G-FJ99J54EYR"
+    };
+
+    const appfb = initializeApp(firebaseConfig);
+    const auth  = getAuth(appfb);
+    const db    = getFirestore(appfb);
+
+    // ──────────────────────────────────────────────────────────
+    // VERIFY BUTTON: validate the OTP and complete the 2FA step
+    // ──────────────────────────────────────────────────────────
+    document.getElementById("verifyBtn").addEventListener("click", async () => {
+      const btn = document.getElementById("verifyBtn");
+      if (btn.disabled) return;
+      setLoading(btn, true);
+
+      // Collect the 6 digits from the individual input boxes
+      const inputs         = document.querySelectorAll(".code-boxes input");
+      const otpCode        = Array.from(inputs).map(i => i.value).join("");
+      const msg            = document.getElementById("inLineMessage");
+
+      // Retrieve session data saved by the login page
+      const verificationId = sessionStorage.getItem("verificationId");
+      const uid            = sessionStorage.getItem("uid");
+
+      // Basic validation: all 6 digits must be filled
+      if (!otpCode || otpCode.length !== 6) {
+        msg.textContent  = "Please enter the 6-digit code.";
+        msg.style.color  = "red";
+        setLoading(btn, false);
+        return;
+      }
+
+      try {
+        // ── Step 1: Build a Firebase PhoneAuthCredential from the OTP ──
+        const cred = PhoneAuthProvider.credential(verificationId, otpCode);
+        const user = auth.currentUser;
+
+        if (user) {
+          try {
+            // ── Step 2a: Link the phone credential to the Firebase account ──
+            await linkWithCredential(user, cred);
+            await user.reload();
+          } catch (err) {
+            // If the phone is already linked, re-authenticate with the credential instead
+            if (
+              err.code === "auth/provider-already-linked" ||
+              err.code === "auth/credential-already-in-use"
+            ) {
+              await reauthenticateWithCredential(user, cred);
+              await user.reload();
+            } else {
+              throw err; // unexpected error — rethrow
+            }
+          }
+
+          // ── Step 3: Mark 2FA as enabled in Firestore ──
+          await updateDoc(doc(db, "Radiologists", uid), { TwoFactorEnabled: true });
+
+          // ── Step 4: Clean up sessionStorage ──
+          sessionStorage.removeItem("verificationId");
+
+          msg.style.color  = "green";
+          msg.textContent  = "Verification successful. Redirecting...";
+
+          // ── Step 5: Redirect to the backend to create the server-side session ──
+          setTimeout(() => {
+            window.location.href = "/login_from_firebase?uid=" + uid;
+          }, 1000);
+
+        } else {
+          // No user logged in — session may have expired
+          msg.style.color  = "red";
+          msg.textContent  = "No logged-in user found. Please login again.";
+          setLoading(btn, false);
+        }
+
+      } catch (error) {
+        console.error(error);
+        msg.textContent  = "Invalid or expired code. Try again.";
+        msg.style.color  = "red";
+        setLoading(btn, false);
+      }
+    });
+
+    // ──────────────────────────────────────────────────────────
+    // RESEND LINK: send a new OTP to the same phone number
+    // ──────────────────────────────────────────────────────────
+    document.getElementById("resendLink").addEventListener("click", async () => {
+      const msg         = document.getElementById("inLineMessage");
+      const phoneNumber = sessionStorage.getItem("phoneNumber");
+
+      if (!phoneNumber) {
+        msg.textContent  = "No phone number found in session. Please login again.";
+        msg.style.color  = "red";
+        return;
+      }
+
+      try {
+        // Clear any existing reCAPTCHA widget before creating a new one
+        if (window.recaptchaVerifier && typeof window.recaptchaVerifier.clear === "function") {
+          window.recaptchaVerifier.clear();
+        }
+
+        // Create a fresh invisible reCAPTCHA (required for each SMS request)
+        window.recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", { size: "invisible" });
+
+        // Request a new SMS OTP
+        const provider           = new PhoneAuthProvider(auth);
+        const newVerificationId  = await provider.verifyPhoneNumber(phoneNumber, window.recaptchaVerifier);
+
+        // Save the new verificationId so the Verify button can use it
+        sessionStorage.setItem("verificationId", newVerificationId);
+
+        msg.textContent  = "New verification code sent!";
+        msg.style.color  = "green";
+
+      } catch (error) {
+        console.error(error);
+        msg.textContent  = "Failed to resend code. Try again later.";
+        msg.style.color  = "red";
+      }
+    });
+  </script>
+
+  <!-- Invisible reCAPTCHA anchor required by Firebase Phone Auth -->
+  <div id="recaptcha-container"></div>
+
+</body>
+
+</html>

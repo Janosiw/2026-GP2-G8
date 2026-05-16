@@ -1,0 +1,3032 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Brainalyze | MRI Scan Analysis</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+
+  <style>
+    .progress-circle-container {
+      display: none;
+      width: 180px;
+      height: 180px;
+      margin: 30px auto;
+      position: relative;
+    }
+
+    .progress-circle {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      border: 12px solid #dce3ff;
+      border-top-color: #6176ff;
+      animation: spin 1s linear infinite;
+    }
+
+    .progress-circle-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 28px;
+      font-weight: 700;
+      color: #1e2a47;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    :root {
+      --brand: #4f67d3;
+      --ink: #0f1221;
+      --muted: #6b7280;
+      --border: #dbe1f4;
+      --bg1: #f7faff;
+      --bg2: #f7faff;
+      --glass-bg: rgba(255, 255, 255, 0.55);
+      --glass-brd: rgba(255, 255, 255, 0.35);
+      --radius: 16px;
+    }
+
+    body {
+      font-family: 'Poppins', 'Cairo', 'Arial', sans-serif;
+      background: #f7faff;
+    }
+
+    .sidebar.collapsed~.page-frame {
+      margin-left: 85px;
+    }
+
+    .sidebar.collapsed~.main #toggleHeader {
+      left: 95px;
+    }
+
+    .main {
+      padding: 28px;
+      margin-top: 3%;
+      transition: margin-left 0.35s ease;
+    }
+
+    .upload-card {
+      padding: 28px;
+      margin-bottom: 22px;
+      animation: rise .6s ease both;
+    }
+
+    .upload-card h2 {
+      margin: 0 0 14px;
+      font-size: 18px;
+      color: #1f2240;
+      font-weight: 700;
+    }
+
+    .upload-box {
+      border: 2px dashed var(--border);
+      border-radius: 20px;
+      background: #ffffff80;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 220px;
+      width: 100%;
+      color: var(--muted);
+      cursor: pointer;
+      transition: border-color .25s, background .25s, transform .25s;
+    }
+
+    .upload-box:hover {
+      border-color: var(--brand);
+      background: #ffffffcc;
+      transform: translateY(-2px);
+    }
+
+    .upload-box i {
+      font-size: 34px;
+      color: #9aa3d3;
+      margin-bottom: 10px;
+    }
+
+    .upload-box p {
+      margin: 0;
+    }
+
+    .upload-box small {
+      margin-top: 4px;
+      color: #9aa3c5;
+    }
+
+    #fileInput {
+      display: none;
+    }
+
+    #preview {
+      width: 100%;
+      height: 260px;
+      border-radius: 12px;
+      object-fit: contain;
+      display: none;
+      background-color: #0b0b10;
+      padding: 0;
+      margin: 0;
+      border: none;
+    }
+
+    .btns {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      margin-top: 18px;
+      width: 100%;
+      padding: 0 4px;
+    }
+
+    .btns label,
+    .btns button {
+      padding: 8px 14px;
+      flex: 1;
+      border-radius: 10px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btns label {
+      background-color: #95a5a6;
+      color: white;
+      border: 1.5px solid #e4e7f7;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    .btns label:hover {
+      background-color: #7f8c8d;
+      transform: translateY(-1px);
+    }
+
+    .btns button {
+      background-color: var(--brand);
+      color: white;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .btns button:hover {
+      background-color: #3f58b8;
+      transform: translateY(-1px);
+    }
+
+    .btns button:disabled {
+      opacity: 0.75;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-dark {
+      align-self: center;
+      background: #4f67d3;
+      color: #fff;
+      border: 1px solid #4f67d3;
+      align-items: center;
+      padding: 8px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      gap: 8px;
+    }
+
+    .btn-dark:hover {
+      background: #3f58b8;
+      border-color: #3f58b8;
+    }
+
+    .progress-card {
+      display: none;
+      padding: 20px 24px;
+      margin-bottom: 22px;
+    }
+
+    .progress-head {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      gap: 12px;
+    }
+
+    .progress-wrap {
+      width: 100%;
+      height: 12px;
+      background: #e9edff;
+      border-radius: 999px;
+      overflow: hidden;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, .04);
+    }
+
+    .progress-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #8795ef, #647be0, #4857bb);
+      box-shadow: 0 6px 18px rgba(79, 103, 211, .4);
+      transition: width .18s linear;
+    }
+
+    .progress-foot {
+      text-align: center;
+      color: #96a0c9;
+      font-size: 12px;
+      margin-top: 10px;
+    }
+
+    .results {
+      display: none;
+      padding: 24px 24px;
+      margin-bottom: 22px;
+      animation: fadeSlide .45s ease;
+    }
+
+    .res-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .res-header h3 {
+      margin: 0;
+      color: #1f2240;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .chip {
+      background: #ecfdf5;
+      color: #0d7a49;
+      border: 1px solid #c6f7da;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .section-label {
+      font-size: 13px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #9ca3af;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .tumor-box {
+      background: #fff6f6;
+      border: 1px solid #ffe0e0;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 18px;
+    }
+
+    .tumor-box .title {
+      color: #991b1b;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .conf-rail {
+      width: 100%;
+      height: 9px;
+      background: #fde2e2;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .conf-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #4f67d3, #7285ff);
+      transition: width .5s ease;
+    }
+
+    .tumor-conf-label {
+      text-align: right;
+      font-size: 13px;
+      color: #111827;
+      margin-top: 6px;
+    }
+
+    @keyframes rise {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeSlide {
+      from {
+        opacity: 0;
+        transform: translateY(6px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .page-frame {
+      margin-left: 250px;
+      transition: margin-left .35s ease;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      padding-top: 60px;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(4px);
+    }
+
+    .modal-content {
+      margin: auto;
+      display: block;
+      max-width: 80%;
+      max-height: 80%;
+      border-radius: 14px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+      animation: zoomIn 0.3s ease;
+    }
+
+    @keyframes zoomIn {
+      from {
+        transform: scale(0.8);
+        opacity: 0;
+      }
+
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .close {
+      position: absolute;
+      top: 25px;
+      right: 40px;
+      color: #fff;
+      font-size: 30px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .close:hover {
+      color: #f97316;
+      transform: scale(1.1);
+    }
+
+    .seg-overlay-box {
+      position: relative;
+      width: 100%;
+      max-width: 340px;
+      margin: auto;
+    }
+
+    .base-img {
+      width: 100%;
+      border-radius: 14px;
+      display: block;
+    }
+
+    .mask-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      border-radius: 14px;
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    #reportModal.modal{
+      display:none;
+      align-items:center;       /* ✅ center vertically */
+      justify-content:center;   /* ✅ center horizontally */
+      background: rgba(15,18,33,0.35);  /* ✅ lighter overlay (not too dark) */
+      backdrop-filter: blur(2px);
+      padding:40px;
+    }
+
+    #reportModal .report-modal-content{
+      background:#fff;
+      border: 1px solid #e6eaf7;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.18);
+      max-width: 780px;
+      width: 92%;
+      max-height: 75vh;
+      overflow:auto;
+      padding:28px 30px;
+      border-radius: 16px;
+      position: relative;
+    }
+
+    #reportModal .close-btn{
+      position:absolute;
+      top:18px;
+      right:20px;
+      font-size:22px;
+      color:#6b7280;
+      font-weight:500;
+      cursor:pointer;
+    }
+    #reportModal .close-btn:hover{
+      color:#111827;
+    }
+    /* ✅ Header layout: chip left, title beside it */
+    #reportModal .report-header{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      margin-bottom: 10px;
+      padding-right: 40px; /* leaves space so title doesn't sit under the close */
+    }
+
+    #reportModal .report-title{
+      margin:0;
+      color:#1f2240;
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .analysis-actions{
+      display:none;
+      margin-top:20px;
+      display:flex;
+      gap:12px;
+      justify-content:flex-start; /* left aligned */
+    }
+
+    .small-btn{
+      padding:10px 18px;
+      font-size:14px;
+      border-radius:8px;
+      width:200px; /* same size buttons */
+    }
+
+    #actionButtons{
+  display: none !important;
+}
+    /* ✅ IMPORTANT: segmentation card hidden until end */
+    #segCard {
+      display: none;
+    }
+
+    @media (max-width: 768px) {
+      html,
+      body {
+        overflow-x: hidden !important;
+        width: 100% !important;
+      }
+
+      .sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: -260px !important;
+        width: 190px !important;
+        height: 100vh !important;
+        background: #ffffff !important;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        transition: left 0.35s ease !important;
+        z-index: 2000 !important;
+      }
+
+      .sidebar.active {
+        left: 0 !important;
+      }
+
+      #docheader {
+        left: 0 !important;
+        width: 94% !important;
+        position: fixed !important;
+        top: 0 !important;
+        z-index: 1500 !important;
+        background: #f7faff !important;
+      }
+
+      .footer-medical {
+        margin-left: 0 !important;
+        width: 100% !important;
+      }
+
+      .fm-wrapper {
+        display: flex;
+        flex-direction: row !important;
+        justify-content: space-between;
+        align-items: center;
+        text-align: center !important;
+        gap: 10px !important;
+        flex-wrap: nowrap;
+      }
+
+      .fm-left,
+      .fm-center,
+      .fm-right {
+        flex: 0 0 auto;
+      }
+
+      .main {
+        margin-top: 90px !important;
+        padding: 16px !important;
+      }
+
+      .mri-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 18px !important;
+      }
+
+      .mri-box img {
+        width: 70% !important;
+        margin: auto !important;
+        display: block !important;
+      }
+
+      .seg-overlay-box {
+        width: 70% !important;
+        max-width: 320px !important;
+        margin: 0 auto !important;
+      }
+
+      .seg-overlay-box img {
+        width: 93% !important;
+      }
+
+      .btn-dark {
+        font-size: 13px !important;
+      }
+
+      .fm-wrapper {
+        flex-direction: row !important;
+        text-align: center !important;
+        gap: 10px !important;
+      }
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(2px);
+      z-index: 1666;
+    }
+
+    .sidebar-overlay.active {
+      display: block;
+    }
+    #plot3dDiv .modebar-container,
+    #plot3dDiv .modebar { display: none !important; }
+  </style>
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar">
+  <div class="brand" onclick="window.location.href='{{ url_for('home') }}'">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Brainalyze">
+    <span>Brainalyze</span>
+  </div>
+  <nav class="nav">
+    <a href="{{ url_for('home') }}"><img src="{{ url_for('static', filename='images/home-icon.jpg') }}" alt=""><span>Home</span></a>
+    <a class="active" href="{{ url_for('patients') }}"><img src="{{ url_for('static', filename='images/patient-icon.png') }}" alt=""><span>Patients</span></a>
+    <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='images/home-icon.jpg') }}" alt=""><span>Dashboard</span></a>
+    <a href="{{ url_for('reports') }}"><img src="{{ url_for('static', filename='images/patient-icon.png') }}" alt=""><span>Reports</span></a>
+    <a href="{{ url_for('profile') }}"><img src="{{ url_for('static', filename='images/user-icon.jpg') }}" alt=""><span>Profile</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="#" id="logoutBtn" class="logout"><span>Logout</span></a>
+  </div>
+</aside>
+
+  <div class="popup-overlay" id="logoutPopup">
+    <div class="popup-box">
+      <h2>Confirm Logout</h2>
+      <p>Are you sure you want to log out?</p>
+      <div class="popup-buttons">
+        <button class="popup-cancel" id="cancelLogout">Cancel</button>
+        <button class="popup-confirm" id="confirmLogout">Yes, Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-wrapper">
+
+    <div id="docheader">
+      <div style="display:flex; align-items:center; gap:15px;">
+        <button class="toggle-btn" id="toggleBtn">
+          <img src="{{ url_for('static', filename='images/sidebar_icon.png') }}" alt="menu" width="32" height="32" style="object-fit: contain;">
+        </button>
+        <span id="pageTitle">Scan & Analyze MRI</span>
+      </div>
+
+      <div class="doctor-info">
+        <div class="doctor-details">
+          <h2>Dr. {{ doctor.name }}</h2>
+          <p>{{ doctor.email }}</p>
+        </div>
+
+        <img src="{{ doctor.ProfilePicture if doctor.ProfilePicture else url_for('static', filename='images/user.png') }}" class="profile-pic" alt="Profile" onclick="window.location.href='{{ url_for('profile') }}'">
+      </div>
+    </div>
+
+    <div class="main">
+
+      <section class="glass-card upload-card" id="uploadCard">
+        <h2>Upload MRI Image</h2>
+
+        <label class="upload-box" id="uploadBox" for="fileInput" title="Click to upload">
+          <i class="fa-solid fa-upload"></i>
+          <p>Click to upload MRI scan</p>
+          <small>PNG, JPG · NIfTI (.nii, .nii.gz) · ZIP (3D)</small>
+        </label>
+        <input type="file" id="fileInput" accept="image/*,.nii,.nii.gz,.zip">
+
+        <!-- Warning shown only when user tries to upload 3D into a 2D case -->
+        <div id="no3dNotice" style="display:none; align-items:center; gap:7px; margin-top:10px;
+             background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:8px 12px;">
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" style="flex-shrink:0;">
+            <circle cx="12" cy="12" r="10" fill="#fbbf24" opacity=".2"/>
+            <path d="M12 8v4m0 4h.01" stroke="#d97706" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="12" cy="12" r="10" stroke="#d97706" stroke-width="1.5"/>
+          </svg>
+          <span style="font-size:12px; color:#92400e; line-height:1.4;">
+            This case already has 2D scans. To add a 3D MRI, please
+            <strong>create a new case</strong> for this patient.
+          </span>
+        </div>
+
+        <!-- Warning shown only when user tries to upload 2D into a 3D case -->
+        <div id="no2dNotice" style="display:none; align-items:center; gap:7px; margin-top:10px;
+             background:#fffbeb; border:1px solid #fde68a; border-radius:10px; padding:8px 12px;">
+          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" style="flex-shrink:0;">
+            <circle cx="12" cy="12" r="10" fill="#fbbf24" opacity=".2"/>
+            <path d="M12 8v4m0 4h.01" stroke="#d97706" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="12" cy="12" r="10" stroke="#d97706" stroke-width="1.5"/>
+          </svg>
+          <span style="font-size:12px; color:#92400e; line-height:1.4;">
+            This case already has a 3D MRI scan. To add a 2D scan, please
+            <strong>create a new case</strong> for this patient.
+          </span>
+        </div>
+
+        <!-- 3D panel shown when NIfTI/ZIP is selected -->
+        <div id="badge3d" style="display:none; margin-top:10px; animation:fadeSlide .35s ease;">
+
+          <!-- Plain note text -->
+          <p style="margin:0 0 8px; font-size:12px; color:#9ca3af; text-align:left;">
+            This file will be analysed as a full 3D brain volume. Classification is set to Glioma.
+          </p>
+
+          <!-- Filename only -->
+          <p id="badge3dFileName" style="margin:0 0 10px; font-size:13px; font-weight:600; color:#4b5563; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">—</p>
+
+        </div>
+
+        <img id="preview" alt="MRI Preview">
+
+        <!-- 3-plane instant preview grid (shown for NIfTI/ZIP uploads) -->
+        <div id="preview3d" style="display:none; margin-top:12px; animation:fadeSlide .35s ease;">
+          <!-- Loading overlay shown while fetching slices -->
+          <div id="preview3dLoading" style="display:none; text-align:center; padding:18px 0 10px;">
+            <div style="display:inline-flex; align-items:center; gap:10px; background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:10px 20px;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="animation:spin3d 0.9s linear infinite; flex-shrink:0;">
+                <circle cx="12" cy="12" r="10" stroke="#bae6fd" stroke-width="3"/>
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="#3b82f6" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+              <span style="font-size:13px; color:#374151; font-weight:500;">Extracting volume slices…</span>
+            </div>
+          </div>
+          <style>@keyframes spin3d { to { transform:rotate(360deg); } }</style>
+
+          <div id="preview3dPanels" style="display:none; grid-template-columns:1fr 1fr 1fr; gap:8px;">
+
+            <!-- Axial -->
+            <div style="background:#050810; border-radius:10px; overflow:hidden; border:1px solid #1e293b;">
+              <div style="background:#7c1d1d; padding:5px 10px; font-size:10px; font-weight:700; color:#fca5a5; letter-spacing:.06em;">AXIAL</div>
+              <div style="line-height:0; min-height:140px; display:flex; align-items:center; justify-content:center; background:#080808;">
+                <img id="prev3d-axial" src="" alt="axial" style="width:100%; object-fit:contain; display:none;">
+              </div>
+            </div>
+
+            <!-- Coronal -->
+            <div style="background:#050810; border-radius:10px; overflow:hidden; border:1px solid #1e293b;">
+              <div style="background:#14532d; padding:5px 10px; font-size:10px; font-weight:700; color:#86efac; letter-spacing:.06em;">CORONAL</div>
+              <div style="line-height:0; min-height:140px; display:flex; align-items:center; justify-content:center; background:#080808;">
+                <img id="prev3d-coronal" src="" alt="coronal" style="width:100%; object-fit:contain; display:none;">
+              </div>
+            </div>
+
+            <!-- Sagittal -->
+            <div style="background:#050810; border-radius:10px; overflow:hidden; border:1px solid #1e293b;">
+              <div style="background:#1e3a5f; padding:5px 10px; font-size:10px; font-weight:700; color:#93c5fd; letter-spacing:.06em;">SAGITTAL</div>
+              <div style="line-height:0; min-height:140px; display:flex; align-items:center; justify-content:center; background:#080808;">
+                <img id="prev3d-sagittal" src="" alt="sagittal" style="width:100%; object-fit:contain; display:none;">
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="btns" id="btns">
+          <label for="fileInput">
+            <i class="fa-solid fa-image" style="margin-right:8px;"></i>
+            Upload Different Image
+          </label>
+          <input type="hidden" id="patientId" value="{{ request.args.get('patient_id') }}">
+          <input type="hidden" id="caseId" value="{{ request.args.get('case_id') }}">
+          <input type="hidden" id="scanDate" value="{{ scan_date or '' }}">
+
+          <!-- ✅ One button -->
+          <button id="analyzeBtn">Analyze</button>
+        </div>
+      </section>
+
+      <!-- Classification Results Card (2D) -->
+      <section class="glass-card" id="clsResultCard" style="display:none; padding:24px; margin-bottom:22px; animation:fadeSlide .45s ease;">
+        <div class="res-header">
+          <h3>Classification Results</h3>
+          <span class="chip" id="clsChip">Analysis Complete</span>
+        </div>
+        <div class="tumor-box" id="tumorResultBox">
+          <div class="title" id="tumorType" style="font-size:16px; font-weight:700; color:#991b1b; margin-bottom:10px;">—</div>
+          <div class="conf-rail">
+            <div class="conf-fill" id="confFill"></div>
+          </div>
+          <p class="tumor-conf-label" id="confScore">—</p>
+        </div>
+        <div id="mriVizSection" style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:18px;">
+          <div style="background:#fff; border-radius:14px; padding:14px; box-shadow:0 1px 6px rgba(0,0,0,.07); display:flex; flex-direction:column; align-items:center; gap:10px;">
+            <div class="section-label" style="font-weight:600; font-size:13px; color:#374151; text-align:center; letter-spacing:.04em;">Original MRI</div>
+            <img id="origImg" alt="Original MRI" style="max-width:100%; height:auto; border-radius:10px; display:block;" class="zoomable">
+          </div>
+          <div style="background:#fff; border-radius:14px; padding:14px; box-shadow:0 1px 6px rgba(0,0,0,.07); display:flex; flex-direction:column; align-items:center; gap:10px;">
+            <div class="section-label" style="font-weight:600; font-size:13px; color:#374151; text-align:center; letter-spacing:.04em;">GradCAM Heatmap</div>
+            <img id="gradImg" alt="GradCAM" style="max-width:100%; height:auto; border-radius:10px; display:block;" class="zoomable">
+          </div>
+        </div>
+      </section>
+
+      <!-- Segmentation card (2D result) -->
+      <section class="glass-card seg-card" id="segCard">
+        <div class="seg-card-title">Tumor Segmentation</div>
+
+        <div class="seg-overlay-box">
+          <img id="origOverlay" src="" alt="Original MRI" class="base-img zoomable">
+          <img id="maskOverlay" src="" alt="Tumor Mask" class="mask-img zoomable">
+        </div>
+
+        <p style="text-align:center; color:#6b7280; font-size:12px; margin-top:8px;">
+          Highlighted tumor region (AI-based localization)
+        </p>
+      </section>
+
+      <!-- Progress card — placed here so it appears BELOW the classification results -->
+      <section class="glass-card progress-card" id="progressCardCls" aria-live="polite">
+        <div class="progress-head">
+          <span id="progressStageText">Analysis Started…</span>
+          <span id="progressTextCls">0%</span>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-bar" id="progressBarCls"></div>
+        </div>
+        <div class="progress-foot" id="progressFootText">Uploading MRI image…</div>
+        <div id="progressError" style="display:none; margin-top:10px; padding:10px 12px; border-radius:10px; font-size:13px;">
+          <span id="progressErrorMsg"></span>
+          <div id="progressErrorActions" style="display:none; margin-top:10px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button id="retry2dBtn" onclick="switchTo2DAfterFail()"
+              style="padding:8px 16px; border-radius:8px; background:#4f67d3; color:#fff; border:none; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:7px;">
+              <i class="fa-solid fa-layer-group"></i> Switch to 2D Segmentation
+            </button>
+            <button id="retryZipBtn" onclick="retryZipUpload()"
+              style="padding:8px 16px; border-radius:8px; background:#fff; color:#2563eb; border:1.5px solid #2563eb; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:7px;">
+              <i class="fa-solid fa-file-zipper"></i> Try Another ZIP
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Segmentation Method Choice Card (shown for 2D glioma) -->
+      <section class="glass-card" id="segChoiceCard" style="display:none; padding:24px; margin-bottom:22px; animation:fadeSlide .45s ease;">
+        <div style="margin-bottom:18px;">
+          <h3 style="margin:0 0 8px; color:#1f2240; font-size:17px; font-weight:700;">
+            <i class="fa-solid fa-circle-exclamation" style="color:#f59e0b; margin-right:8px;"></i>
+            Glioma Detected — Choose Segmentation Method
+          </h3>
+          <p style="margin:0; color:#6b7280; font-size:13px;">
+            Choose how you want to segment this scan. 3D segmentation gives more detailed results but requires a ZIP file with 4 MRI modalities.
+          </p>
+        </div>
+        <div style="display:flex; gap:14px; flex-wrap:wrap;">
+          <button id="seg2dBtn" style="flex:1; min-width:180px; padding:14px 20px; border-radius:12px; border:1.5px solid #4f67d3; background:#fff; color:#4f67d3; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s; text-align:center;">
+            <div><i class="fa-solid fa-layer-group" style="margin-right:8px;"></i>2D Segmentation</div>
+            <div style="font-size:11px; font-weight:400; color:#9ca3af; margin-top:4px;">Quick • Works with current image</div>
+          </button>
+          <button id="seg3dBtn" style="flex:1; min-width:180px; padding:14px 20px; border-radius:12px; border:1.5px solid #2563eb; background:#fff; color:#2563eb; font-weight:600; font-size:14px; cursor:pointer; transition:all 0.2s; text-align:center;">
+            <div><i class="fa-solid fa-cube" style="margin-right:8px;"></i>3D Segmentation</div>
+            <div style="font-size:11px; font-weight:400; color:#9ca3af; margin-top:4px;">More detailed • Requires ZIP with 4 MRI files</div>
+          </button>
+        </div>
+      </section>
+
+      <!-- 3D NIfTI Upload Panel (shown after clicking "3D Segmentation" for Glioma) -->
+      <section class="glass-card" id="seg3dPanel" style="display:none; padding:24px; margin-bottom:22px; animation:fadeSlide .45s ease;">
+        <div style="display:flex; align-items:center; gap:12px; margin-bottom:16px;">
+          <button id="seg3dBackBtn" style="background:none; border:1.5px solid #d1d5db; color:#6b7280; border-radius:8px; padding:6px 12px; cursor:pointer; font-size:13px; font-weight:600;">
+            <i class="fa-solid fa-arrow-left" style="margin-right:5px;"></i>Back
+          </button>
+          <h3 style="margin:0; color:#1f2240; font-size:17px; font-weight:700;">
+            <i class="fa-solid fa-cube" style="color:#2563eb; margin-right:8px;"></i>3D Segmentation
+          </h3>
+        </div>
+
+        <!-- Info box — same style as badge3d panel -->
+        <div style="background:linear-gradient(135deg,#f3f0ff 0%,#dbeafe 100%); border:1.5px solid #93c5fd; border-radius:14px; padding:18px 20px; margin-bottom:18px;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+            <span style="background:#2563eb; color:#fff; border-radius:8px; padding:5px 10px; font-size:12px; font-weight:700; letter-spacing:.5px;">
+              <i class="fa-solid fa-cube" style="margin-right:5px;"></i>3D NIfTI Volume
+            </span>
+            <span style="background:#1d4ed8; color:#fff; border-radius:8px; padding:5px 10px; font-size:12px; font-weight:700; letter-spacing:.5px;">
+              <i class="fa-solid fa-brain" style="margin-right:5px;"></i>nnUNet 3D Segmentation
+            </span>
+          </div>
+          <p style="margin:0; font-size:13px; color:#1d4ed8; line-height:1.6;">
+            Upload a <strong>single NIfTI file</strong> (.nii / .nii.gz) or a <strong>ZIP</strong> containing a .nii file.
+            The 3D pipeline analyses the full brain volume using nnUNet for a precise tumour map.
+          </p>
+        </div>
+
+        <!-- File drop zone — matches badge3d style -->
+        <label id="zipUploadBox" for="zipFileInput"
+          style="display:flex; flex-direction:column; align-items:center; justify-content:center;
+                 border:2px dashed #93c5fd; border-radius:16px; background:#eff6ff;
+                 height:140px; cursor:pointer; transition:all 0.25s; color:#2563eb;">
+          <i class="fa-solid fa-file-medical" style="font-size:30px; margin-bottom:8px; color:#60a5fa;"></i>
+          <span style="font-weight:600; font-size:14px;" id="zipLabel">Click to upload NIfTI / ZIP</span>
+          <small style="color:#60a5fa; margin-top:4px;">(.nii · .nii.gz · .zip)</small>
+        </label>
+        <input type="file" id="zipFileInput" accept=".nii,.nii.gz,.zip" style="display:none;">
+
+        <!-- Selected file badge (hidden until file chosen) -->
+        <div id="seg3dFileName" style="display:none; margin-top:12px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:10px; padding:10px 14px; font-size:13px; color:#166534; font-weight:600;">
+          <i class="fa-solid fa-circle-check" style="color:#22c55e; margin-right:6px;"></i>
+          <span id="seg3dFileNameText"></span>
+        </div>
+
+        <button id="runSeg3dBtn" disabled
+          style="margin-top:16px; width:100%; padding:13px; border-radius:12px;
+                 background:#2563eb; color:#fff; font-size:14px; font-weight:600;
+                 border:none; cursor:not-allowed; opacity:0.6; transition:all 0.2s;">
+          <i class="fa-solid fa-cube" style="margin-right:8px;"></i>Run 3D Segmentation
+        </button>
+      </section>
+
+      <!-- 3D Results Section (shown only for NIfTI inputs or 3D segmentation) -->
+      <section class="glass-card" id="results3d" style="display:none; padding:24px; margin-bottom:22px; animation:fadeSlide .45s ease;">
+        <div class="res-header">
+          <h3>Segmentation Results</h3>
+          <span class="chip" style="background:#dbeafe; color:#1d4ed8; border-color:#bfdbfe;">3D Segmentation</span>
+        </div>
+
+        <!-- Model / colour legend badge -->
+        <div id="modelBadge3d" style="margin-bottom:18px; font-size:12px; color:#6b7280;"></div>
+
+        <!-- View toggle: MPR Slices ↔ 3D View -->
+        <div id="viewToggle3d" style="display:none; margin-bottom:14px;">
+          <div style="display:inline-flex; border-radius:10px; overflow:hidden; border:1px solid #e2e8f0;">
+            <button id="toggleBtnSlices" onclick="switchView3d('slices')"
+              style="padding:8px 22px; font-size:13px; font-weight:600; border:none; cursor:pointer;
+                     background:#2563eb; color:#fff; transition:all .2s;">
+              <i class="fa-solid fa-layer-group" style="margin-right:7px;"></i>MPR Slices
+            </button>
+            <button id="toggleBtn3d" onclick="switchView3d('3d')"
+              style="padding:8px 22px; font-size:13px; font-weight:600; border:none; cursor:pointer;
+                     background:#f1f5f9; color:#475569; transition:all .2s;">
+              <i class="fa-solid fa-cube" style="margin-right:7px;"></i>3D View
+            </button>
+          </div>
+        </div>
+
+        <!-- Interactive viewer -->
+        <div id="viewer3dSection">
+
+          <!-- ── MPR Explorer (3 panels + sliders) ── -->
+          <div id="slicesSection3d">
+
+            <!-- colour legend -->
+            <div style="display:flex; align-items:center; gap:14px; margin-bottom:10px; flex-wrap:wrap;">
+              <span style="font-size:12px; font-weight:700; color:#60a5fa;">MPR Viewer</span>
+              <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8;">
+                <span style="width:12px;height:12px;border-radius:3px;background:rgb(220,50,50);display:inline-block;"></span>
+                Tumour
+              </span>
+            </div>
+
+            <!-- three MPR panels -->
+            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+
+              <!-- Axial -->
+              <div style="background:#050810; border-radius:10px; overflow:hidden; border:1px solid #1e293b;">
+                <div style="background:#7c1d1d; padding:6px 12px; font-size:11px; font-weight:700; color:#fca5a5; letter-spacing:.06em; display:flex; justify-content:space-between; align-items:center;">
+                  <span>AXIAL</span>
+                  <span id="mpr-lbl-axial" style="font-weight:400; opacity:.8; font-size:10px;">z = –</span>
+                </div>
+                <div id="mpr-wrap-axial" style="position:relative; background:#080808; line-height:0; min-height:200px; display:flex; align-items:center; justify-content:center;">
+                  <span id="mpr-spin-axial" style="color:#475569; font-size:11px; position:absolute;">Loading…</span>
+                  <img id="mpr-img-axial" src="" alt="axial"
+                       style="width:100%; display:block; object-fit:contain; opacity:0; transition:opacity .3s;"
+                       onload="this.style.opacity=1; document.getElementById('mpr-spin-axial').style.display='none';">
+                  <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(252,211,77,.35);pointer-events:none;"></div>
+                  <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(252,211,77,.35);pointer-events:none;"></div>
+                </div>
+                <div style="padding:7px 10px; display:flex; align-items:center; gap:8px; background:#0a0a1a;">
+                  <input type="range" id="mpr-sl-axial" min="0" max="154" value="77"
+                    style="flex:1; accent-color:#f87171; cursor:pointer; height:4px;"
+                    oninput="mprFetch('axial', +this.value)">
+                  <span style="font-size:10px; color:#64748b; min-width:28px; text-align:right;" id="mpr-num-axial">–</span>
+                </div>
+              </div>
+
+              <!-- Coronal -->
+              <div style="background:#050810; border-radius:10px; overflow:hidden; border:1px solid #1e293b;">
+                <div style="background:#14532d; padding:6px 12px; font-size:11px; font-weight:700; color:#86efac; letter-spacing:.06em; display:flex; justify-content:space-between; align-items:center;">
+                  <span>CORONAL</span>
+                  <span id="mpr-lbl-coronal" style="font-weight:400; opacity:.8; font-size:10px;">y = –</span>
+                </div>
+                <div id="mpr-wrap-coronal" style="position:relative; background:#080808; line-height:0; min-height:200px; display:flex; align-items:center; justify-content:center;">
+                  <span id="mpr-spin-coronal" style="color:#475569; font-size:11px; position:absolute;">Loading…</span>
+                  <img id="mpr-img-coronal" src="" alt="coronal"
+                       style="width:100%; display:block; object-fit:contain; opacity:0; transition:opacity .3s;"
+                       onload="this.style.opacity=1; document.getElementById('mpr-spin-coronal').style.display='none';">
+                  <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(252,211,77,.35);pointer-events:none;"></div>
+                  <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(252,211,77,.35);pointer-events:none;"></div>
+                </div>
+                <div style="padding:7px 10px; display:flex; align-items:center; gap:8px; background:#0a0a1a;">
+                  <input type="range" id="mpr-sl-coronal" min="0" max="239" value="120"
+                    style="flex:1; accent-color:#4ade80; cursor:pointer; height:4px;"
+                    oninput="mprFetch('coronal', +this.value)">
+                  <span style="font-size:10px; color:#64748b; min-width:28px; text-align:right;" id="mpr-num-coronal">–</span>
+                </div>
+              </div>
+
+              <!-- Sagittal -->
+              <div style="background:#050810; border-radius:10px; overflow:hidden; border:1px solid #1e293b;">
+                <div style="background:#1e3a5f; padding:6px 12px; font-size:11px; font-weight:700; color:#93c5fd; letter-spacing:.06em; display:flex; justify-content:space-between; align-items:center;">
+                  <span>SAGITTAL</span>
+                  <span id="mpr-lbl-sagittal" style="font-weight:400; opacity:.8; font-size:10px;">x = –</span>
+                </div>
+                <div id="mpr-wrap-sagittal" style="position:relative; background:#080808; line-height:0; min-height:200px; display:flex; align-items:center; justify-content:center;">
+                  <span id="mpr-spin-sagittal" style="color:#475569; font-size:11px; position:absolute;">Loading…</span>
+                  <img id="mpr-img-sagittal" src="" alt="sagittal"
+                       style="width:100%; display:block; object-fit:contain; opacity:0; transition:opacity .3s;"
+                       onload="this.style.opacity=1; document.getElementById('mpr-spin-sagittal').style.display='none';">
+                  <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(252,211,77,.35);pointer-events:none;"></div>
+                  <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(252,211,77,.35);pointer-events:none;"></div>
+                </div>
+                <div style="padding:7px 10px; display:flex; align-items:center; gap:8px; background:#0a0a1a;">
+                  <input type="range" id="mpr-sl-sagittal" min="0" max="239" value="120"
+                    style="flex:1; accent-color:#60a5fa; cursor:pointer; height:4px;"
+                    oninput="mprFetch('sagittal', +this.value)">
+                  <span style="font-size:10px; color:#64748b; min-width:28px; text-align:right;" id="mpr-num-sagittal">–</span>
+                </div>
+              </div>
+
+            </div><!-- /grid -->
+
+            <!-- fallback old grid (hidden by default, shown if no NPZ) -->
+            <div id="slicesGrid3d" style="display:none; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:12px; margin-top:12px;"></div>
+
+          </div><!-- /slicesSection3d -->
+
+          <!-- 3D Slicer-style 2×2 layout (shown in 3D View mode) -->
+          <div id="slicer3dLayout" style="display:none;">
+
+            <!-- 2×2 grid -->
+            <div style="display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:3px; background:#111; border-radius:12px; overflow:hidden; border:2px solid #1e293b;">
+
+              <!-- Top-left: Axial -->
+              <div style="position:relative; background:#050810; height:380px; min-height:380px;">
+                <div style="position:absolute; top:8px; left:10px; z-index:2; font-size:11px; font-weight:800; color:#fca5a5; letter-spacing:.08em; background:rgba(124,29,29,0.7); padding:2px 8px; border-radius:4px;">AXIAL</div>
+                <img id="slicer-axial" src="" alt="Axial"
+                     style="width:100%; height:100%; object-fit:contain; display:block;">
+                <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(252,211,77,.4);pointer-events:none;"></div>
+                <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(252,211,77,.4);pointer-events:none;"></div>
+              </div>
+
+              <!-- Top-right: 3D Plotly tumor -->
+              <div style="position:relative; background:rgb(100,120,160); height:380px; min-height:380px;">
+                <style>#plot3dDiv .modebar-container,.modebar{display:none!important;}</style>
+                <div id="plot3dDiv" style="width:100%; height:380px;"></div>
+              </div>
+
+              <!-- Bottom-left: Coronal -->
+              <div style="position:relative; background:#050810; height:380px; min-height:380px;">
+                <div style="position:absolute; top:8px; left:10px; z-index:2; font-size:11px; font-weight:800; color:#86efac; letter-spacing:.08em; background:rgba(20,83,45,0.7); padding:2px 8px; border-radius:4px;">CORONAL</div>
+                <img id="slicer-coronal" src="" alt="Coronal"
+                     style="width:100%; height:100%; object-fit:contain; display:block;">
+                <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(252,211,77,.4);pointer-events:none;"></div>
+                <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(252,211,77,.4);pointer-events:none;"></div>
+              </div>
+
+              <!-- Bottom-right: Sagittal -->
+              <div style="position:relative; background:#050810; height:380px; min-height:380px;">
+                <div style="position:absolute; top:8px; left:10px; z-index:2; font-size:11px; font-weight:800; color:#93c5fd; letter-spacing:.08em; background:rgba(30,58,95,0.7); padding:2px 8px; border-radius:4px;">SAGITTAL</div>
+                <img id="slicer-sagittal" src="" alt="Sagittal"
+                     style="width:100%; height:100%; object-fit:contain; display:block;">
+                <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(252,211,77,.4);pointer-events:none;"></div>
+                <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(252,211,77,.4);pointer-events:none;"></div>
+              </div>
+
+            </div><!-- /2×2 grid -->
+          </div><!-- /slicer3dLayout -->
+
+        </div><!-- /viewer3dSection -->
+      </section>
+
+      <!-- ✅ AI Report Modal -->
+      <div id="reportModal" class="modal">
+        <div class="modal-content report-modal-content">
+          <span class="close-btn" id="closeReportModal">&times;</span>
+          <button id="downloadPdfBtn" type="button" onclick="downloadReportPDF()"
+            style="position:absolute; top:14px; right:210px; background:#16a34a; color:white; border:none; padding:10px 18px; border-radius:12px; cursor:pointer; font-size:14px; display:flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(22,163,74,0.25);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download PDF
+          </button>
+
+          <button id="editReportBtn" type="button"
+            style="position:absolute; top:14px; right:58px; background:#506DCA; color:white; border:none; padding:10px 18px; border-radius:12px; cursor:pointer; font-size:14px; display:flex; align-items:center; gap:6px; box-shadow:0 4px 12px rgba(80,109,202,0.25);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 20h9" />
+              <path d="M16.5 3.5l4 4L7 21H3v-4L16.5 3.5z" />
+            </svg>
+            Edit Report
+          </button>
+          <div class="report-header">
+            <span class="chip report-chip">AI-Generated</span>
+            <h3 class="report-title">Radiology Report</h3>
+          </div>
+
+          <!-- Doctor & Patient Info -->
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; background:#f8faff; border:1px solid #dbe1f4; border-radius:12px; padding:14px 18px;">
+            <div>
+              <div style="font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Radiologist</div>
+              <input id="reportDoctorName" type="text" value="Dr. {{ doctor.name }}" style="width:100%; box-sizing:border-box; border:1px solid #dbe1f4; border-radius:8px; padding:6px 10px; font-size:13px; font-family:inherit; color:#1a1a2e; background:#fff; outline:none;">
+            </div>
+            <div>
+              <div style="font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Email</div>
+              <input id="reportDoctorEmail" type="text" value="{{ doctor.email }}" style="width:100%; box-sizing:border-box; border:1px solid #dbe1f4; border-radius:8px; padding:6px 10px; font-size:13px; font-family:inherit; color:#1a1a2e; background:#fff; outline:none;">
+            </div>
+            <div>
+              <div style="font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Patient Name</div>
+              <input id="reportPatientName" type="text" value="{{ patient_name }}" style="width:100%; box-sizing:border-box; border:1px solid #dbe1f4; border-radius:8px; padding:6px 10px; font-size:13px; font-family:inherit; color:#1a1a2e; background:#fff; outline:none;">
+            </div>
+            <div>
+              <div style="font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Phone Number</div>
+              <input id="reportPatientPhone" type="text" value="{{ patient_phone }}" style="width:100%; box-sizing:border-box; border:1px solid #dbe1f4; border-radius:8px; padding:6px 10px; font-size:13px; font-family:inherit; color:#1a1a2e; background:#fff; outline:none;">
+            </div>
+            <div>
+              <div style="font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Age</div>
+              <input id="reportPatientAge" type="text" value="{{ patient_age }}" style="width:100%; box-sizing:border-box; border:1px solid #dbe1f4; border-radius:8px; padding:6px 10px; font-size:13px; font-family:inherit; color:#1a1a2e; background:#fff; outline:none;">
+            </div>
+            <div>
+              <div style="font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;">Gender</div>
+              <input id="reportPatientGender" type="text" value="{{ patient_gender }}" style="width:100%; box-sizing:border-box; border:1px solid #dbe1f4; border-radius:8px; padding:6px 10px; font-size:13px; font-family:inherit; color:#1a1a2e; background:#fff; outline:none;">
+            </div>
+          </div>
+
+          <div class="section-label">Findings</div>
+          <ul id="findingsList"
+              style="background:#fff; border:1px solid #dbe1f4; border-radius:14px; padding:14px 18px; color:#111827; line-height:1.7; margin-top:6px; margin-bottom:14px;">
+          </ul>
+          <textarea id="findingsEditor"
+            style="display:none; width:100%; min-height:120px; background:#fff; border:1px solid #dbe1f4; border-radius:14px; padding:14px 18px; color:#111827; line-height:1.7; margin-top:6px; margin-bottom:14px; resize:vertical; font-family:'Poppins','Cairo','Arial',sans-serif; font-size:14px;"></textarea>
+
+          <div class="section-label">Impression</div>
+          <ul id="impressionList"
+              style="background:#fff; border:1px solid #dbe1f4; border-radius:14px; padding:14px 18px; color:#111827; line-height:1.7; margin-top:6px;">
+          </ul>
+          <textarea id="impressionEditor"
+            style="display:none; width:100%; min-height:100px; background:#fff; border:1px solid #dbe1f4; border-radius:14px; padding:14px 18px; color:#111827; line-height:1.7; margin-top:6px; resize:vertical; font-family:'Poppins','Cairo','Arial',sans-serif; font-size:14px;"></textarea>
+            <div id="reportEditActions" style="display:none; margin-top:16px; justify-content:flex-end; gap:10px;">
+              <button id="cancelEditReportBtn" type="button" class="btn-dark" style="background:#95a5a6; border-color:#95a5a6;">
+                Cancel
+              </button>
+              <button id="saveReportBtn" type="button" class="btn-dark">
+                Save Changes
+              </button>
+            </div>
+
+          <p id="reportModalNote" style="margin-top:10px; color:#6b7280; font-size:12px;">
+            Note: Content is based only on the model outputs (pixel-based 2D metrics); correlate with full MRI series.
+          </p>
+        </div>
+      </div>
+
+
+      <div id="imgModal" class="modal">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="modalImg">
+      </div>
+
+<!-- ── Doctor Agreement Box (shown after analysis completes) ── -->
+<div id="feedbackCard" style="display:none; background:#fff; border:1px solid #dbe1f4; border-radius:16px; padding:22px 24px; margin-bottom:16px; animation:fadeSlide .45s ease;">
+  <div style="display:flex; align-items:center; gap:10px; margin-bottom:18px;">
+    <div style="width:36px; height:36px; background:#eef1ff; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+      <i class="fa-solid fa-circle-question" style="color:#506DCA; font-size:16px;"></i>
+    </div>
+    <div>
+      <div style="font-size:15px; font-weight:700; color:#1e2a47;">Do you agree with this analysis?</div>
+      <div style="font-size:12px; color:#9ca3af; margin-top:2px;">Your feedback helps improve future results</div>
+    </div>
+  </div>
+  <div id="fbPending" style="display:flex; gap:12px; flex-wrap:wrap;">
+    <button onclick="fbAgree()"
+      style="display:inline-flex; align-items:center; gap:8px; padding:10px 26px; background:#d1fae5; color:#065f46; border:1.5px solid #6ee7b7; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; transition:.2s;"
+      onmouseenter="this.style.background='#a7f3d0'" onmouseleave="this.style.background='#d1fae5'">
+      <i class="fa-solid fa-check"></i> Yes, I agree
+    </button>
+    <button onclick="fbShowReason()"
+      style="display:inline-flex; align-items:center; gap:8px; padding:10px 26px; background:#fee2e2; color:#991b1b; border:1.5px solid #fca5a5; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; transition:.2s;"
+      onmouseenter="this.style.background='#fecaca'" onmouseleave="this.style.background='#fee2e2'">
+      <i class="fa-solid fa-xmark"></i> No, I disagree
+    </button>
+  </div>
+  <div id="fbReasonArea" style="display:none; margin-top:16px;">
+    <div style="font-size:13px; color:#374151; font-weight:500; margin-bottom:8px;">Please describe the reason for your disagreement:</div>
+    <textarea id="fbReasonText"
+      placeholder="e.g. The classification seems incorrect based on the lesion's signal intensity..."
+      style="width:100%; min-height:90px; border:1px solid #dbe1f4; border-radius:10px; padding:10px 14px; font-size:13px; font-family:inherit; color:#1a1a2e; resize:vertical; outline:none; box-sizing:border-box; transition:.2s;"
+      onfocus="this.style.borderColor='#506DCA'" onblur="this.style.borderColor='#dbe1f4'"></textarea>
+    <div style="display:flex; gap:10px; margin-top:10px;">
+      <button onclick="fbSubmit()"
+        style="padding:9px 22px; background:#506DCA; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; transition:.2s;"
+        onmouseenter="this.style.background='#3a55b0'" onmouseleave="this.style.background='#506DCA'">
+        Submit Feedback
+      </button>
+      <button onclick="fbCancelReason()"
+        style="padding:9px 22px; background:#f3f4f6; color:#6b7280; border:1px solid #e5e7eb; border-radius:10px; font-size:14px; font-weight:500; cursor:pointer; transition:.2s;"
+        onmouseenter="this.style.background='#e5e7eb'" onmouseleave="this.style.background='#f3f4f6'">
+        Cancel
+      </button>
+    </div>
+  </div>
+  <div id="fbThanks" style="display:none; align-items:center; gap:10px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:12px; padding:14px 18px; color:#166534; font-size:13px; font-weight:500;">
+    <i class="fa-solid fa-circle-check" style="font-size:18px; flex-shrink:0;"></i>
+    <span>Thank you for your valuable feedback! Your response will be used to improve the analysis performance in the future.</span>
+  </div>
+</div>
+
+<div class="analysis-actions" style="margin-top:20px;">
+  <button id="generateReportBtn" class="btn-dark" style="display:none;">
+    Generate AI Report
+  </button>
+
+  <button id="finishBtn" class="btn-dark">
+    Finish Analysis
+  </button>
+</div>
+    </div>
+
+    <footer class="footer-medical">
+      <div class="fm-wrapper">
+        <div class="fm-left">
+          <img src="/static/images/logo.png" class="fm-logo" alt="Brainalyze">
+          <span class="fm-copy">© 2025 Brainalyze</span>
+        </div>
+
+        <div class="fm-center">
+          <span class="fm-title">FOLLOW US</span>
+          <div class="fm-icons">
+            <a style="text-decoration: none; color: black;" href="https://x.com/brainalyze_co"><img src="/static/images/twitter.png" alt=""><br> @brainalyze_co</a>
+          </div>
+        </div>
+
+        <div class="fm-right">
+          <span class="fm-title">CONTACT</span>
+          <p class="fm-contact">+966530782404</p>
+          <p class="fm-contact">443200466@student.ksu.edu.sa</p>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const uploadBox = document.getElementById('uploadBox');
+    const preview = document.getElementById('preview');
+    const btns = document.getElementById('btns');
+    const sidebar = document.querySelector(".sidebar");
+    const toggleBtn = document.getElementById("toggleBtn");
+
+    // ONE progress card
+    const progressCard = document.getElementById('progressCardCls');
+    const progressBar = document.getElementById('progressBarCls');
+    const progressText = document.getElementById('progressTextCls');
+    const progressStageText = document.getElementById('progressStageText');
+    const progressFootText = document.getElementById('progressFootText');
+
+    // ✅ NEW (D): Friendly error element
+    const progressError = document.getElementById('progressError');
+
+    // Results
+    const clsResultCard = document.getElementById('clsResultCard');
+    const tumorType = document.getElementById('tumorType');
+    const confFill = document.getElementById('confFill');
+    const confScore = document.getElementById('confScore');
+
+    // Seg
+    const segCard = document.getElementById('segCard');
+    const origOverlay = document.getElementById('origOverlay');
+    const maskOverlay = document.getElementById('maskOverlay');
+
+    // Report (Modal)
+    const reportModal = document.getElementById('reportModal');
+    const closeReportModalBtn = document.getElementById('closeReportModal');
+    const generateReportBtn = document.getElementById('generateReportBtn');
+    const findingsListEl = document.getElementById('findingsList');
+    const impressionListEl = document.getElementById('impressionList');
+    const editReportBtn = document.getElementById('editReportBtn');
+    const saveReportBtn = document.getElementById('saveReportBtn');
+    const cancelEditReportBtn = document.getElementById('cancelEditReportBtn');
+    const findingsEditor = document.getElementById('findingsEditor');
+    const impressionEditor = document.getElementById('impressionEditor');
+    const reportEditActions = document.getElementById('reportEditActions');
+
+    let reportData = null;
+    let reportEditMode = false;
+    let currentReportId = null;
+    let currentAnalysisIs3D = false;
+    // MRI imgs
+    const origImg = document.getElementById('origImg');
+    const gradImg = document.getElementById('gradImg');
+
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const finishBtn = document.getElementById('finishBtn');
+    const actionButtons = document.getElementById('actionButtons');
+
+    let lastScanId = null;
+    let hasMask = false;
+    let maskPath = null;
+    let pendingData = null;
+    let lastSlices3d = [];   // stores 3D overlay slice data for PDF
+
+    let segTicker = null;
+
+    // ✅ NEW (B): classification ticker
+    let clsTicker = null;
+
+    // 3D pipeline tracking
+    let is3D = false;
+    const badge3d      = document.getElementById('badge3d');
+    const results3d    = document.getElementById('results3d');
+    const segChoiceCard = document.getElementById('segChoiceCard');
+    const seg3dPanel   = document.getElementById('seg3dPanel');
+    const zipFileInput = document.getElementById('zipFileInput');
+    const runSeg3dBtn  = document.getElementById('runSeg3dBtn');
+    const zipLabel     = document.getElementById('zipLabel');
+
+    function stopClsTicker() {
+      if (clsTicker) { clearInterval(clsTicker); clsTicker = null; }
+    }
+
+    function clearProgressError() {
+      if (!progressError) return;
+      progressError.style.display = "none";
+      progressError.style.background = "";
+      progressError.style.border = "";
+      progressError.style.color = "";
+      const msgEl2 = document.getElementById('progressErrorMsg');
+      if (msgEl2) msgEl2.textContent = "";
+      const actEl2 = document.getElementById('progressErrorActions');
+      if (actEl2) actEl2.style.display = 'none';
+    }
+
+    function showProgressError(message, show3dRetry = false) {
+      if (!progressError) return;
+      progressError.style.display = "block";
+      progressError.style.background = "#fff7ed";
+      progressError.style.border = "1px solid #fed7aa";
+      progressError.style.color = "#9a3412";
+      const msgEl = document.getElementById('progressErrorMsg');
+      if (msgEl) msgEl.textContent = message;
+      const actEl = document.getElementById('progressErrorActions');
+      if (actEl) actEl.style.display = show3dRetry ? 'flex' : 'none';
+    }
+
+    function switchTo2DAfterFail() {
+      clearProgressError();
+      // Hide 3D panel if open
+      if (seg3dPanel) seg3dPanel.style.display = 'none';
+      if (segChoiceCard) segChoiceCard.style.display = 'none';
+      if (!lastScanId) return;
+      // Run 2D segmentation directly
+      (async () => {
+        const segOk = await runSegmentation(lastScanId);
+        showProgress("Done", segOk ? "2D Segmentation complete." : "Segmentation could not be completed.");
+        setProgress(100);
+        setTimeout(() => {
+          hideProgress();
+          renderFinalResults(pendingData);
+          if (actionButtons) actionButtons.style.display = "flex";
+          if (generateReportBtn) generateReportBtn.disabled = false;
+        }, 250);
+      })();
+    }
+
+    function retryZipUpload() {
+      clearProgressError();
+      // Reset NIfTI input and show the 3D panel again
+      if (zipFileInput) zipFileInput.value = "";
+      if (zipLabel) zipLabel.textContent = "Click to upload NIfTI / ZIP";
+      const nameBadge = document.getElementById('seg3dFileName');
+      if (nameBadge) nameBadge.style.display = "none";
+      if (runSeg3dBtn) { runSeg3dBtn.disabled = true; runSeg3dBtn.style.opacity = "0.6"; runSeg3dBtn.style.cursor = "not-allowed"; }
+      if (seg3dPanel) seg3dPanel.style.display = 'block';
+      hideProgress();
+    }
+
+    function waitAtLeast(startMs, minDurationMs) {
+      const elapsed = Date.now() - startMs;
+      return new Promise(res => setTimeout(res, Math.max(0, minDurationMs - elapsed)));
+    }
+
+    let clsStageStart = 0;
+
+    function setAnalyzeBusy(busy) {
+      analyzeBtn.disabled = busy;
+      analyzeBtn.innerHTML = busy
+        ? '<i class="fa-solid fa-spinner fa-spin" style="margin-right:8px;"></i>Analyzing...'
+        : 'Analyze';
+    }
+
+    function setProgress(p) {
+      const pct = Math.max(0, Math.min(100, Math.round(p)));
+      progressBar.style.width = pct + "%";
+      progressText.textContent = pct + "%";
+      return pct;
+    }
+
+    function showProgress(stage, foot) {
+      progressCard.style.display = "block";
+      progressStageText.textContent = stage;
+      progressFootText.textContent = foot;
+      clearProgressError(); // ✅ NEW (D)
+    }
+
+    function hideProgress() {
+      progressCard.style.display = "none";
+
+      stopClsTicker(); // ✅ NEW (B)
+
+      if (segTicker) {
+        clearInterval(segTicker);
+        segTicker = null;
+      }
+    }
+
+    function resetUI(keepPreview3d = false, keepPreview2d = false) {
+      hideProgress();
+      setProgress(0);
+      clearProgressError(); // ✅ NEW (D)
+
+      if (clsResultCard) clsResultCard.style.display = "none";
+      segCard.style.display = "none";
+      if (results3d) results3d.style.display = "none";
+      const _fc = document.getElementById('feedbackCard');
+      if (_fc) { _fc.style.display = 'none'; _fc.style.opacity = '1'; }
+      if (segChoiceCard) segChoiceCard.style.display = "none";
+      if (seg3dPanel) seg3dPanel.style.display = "none";
+      if (!keepPreview3d) {
+        const _p3d = document.getElementById('preview3d');
+        if (_p3d) { _p3d.style.display = 'none';
+          ['axial','coronal','sagittal'].forEach(p => {
+            const el = document.getElementById(`prev3d-${p}`);
+            if (el) el.src = '';
+          });
+        }
+      }
+      if (!keepPreview2d) {
+        preview.style.display = 'none';
+        preview.src = '';
+      }
+      const _vt = document.getElementById('viewToggle3d');
+      if (_vt) _vt.style.display = 'none';
+      // reset 3D slicer layout
+      const _sl = document.getElementById('slicer3dLayout');
+      const _ss = document.getElementById('slicesSection3d');
+      if (_sl) _sl.style.display = 'none';
+      if (_ss) _ss.style.display = 'block';
+      window._plot3dJson = null;
+      if (actionButtons) actionButtons.style.display = "none";
+      if (generateReportBtn) generateReportBtn.disabled = true;
+      // ✅ reset report modal + data
+      reportData = null;
+      if (findingsListEl) findingsListEl.innerHTML = "";
+      if (impressionListEl) impressionListEl.innerHTML = "";
+      if (reportModal) reportModal.style.display = "none";
+
+      document.querySelectorAll('.section-label').forEach(l => l.style.display = "");
+      document.querySelectorAll('.mri-box').forEach(b => b.style.display = "block");
+      const mriVizSection = document.getElementById('mriVizSection');
+      if (mriVizSection) mriVizSection.style.display = '';
+
+      if (tumorType) { tumorType.textContent = "—"; }
+      if (confFill)  { confFill.style.width = "0%"; }
+      if (confScore) { confScore.textContent = "—"; }
+
+      lastScanId = null;
+      hasMask = false;
+      maskPath = null;
+      pendingData = null;
+    }
+
+    function applyNoTumorUI(conf) {
+      if (tumorType) tumorType.textContent = "No Tumor Detected";
+      const c = conf != null ? Number(conf) : 99.0;
+      if (confFill)  confFill.style.width = c + "%";
+      if (confScore) confScore.textContent = c.toFixed(1) + "%";
+
+      document.querySelectorAll('.section-label').forEach(l => l.style.display = "none");
+      document.querySelectorAll('.mri-box').forEach(b => b.style.display = "none");
+
+      segCard.style.display = "none";
+    }
+
+    function renderFinalResults(data) {
+      currentAnalysisIs3D = false;
+
+      // ── populate images ──────────────────────────────────────────────────
+      if (data.original && origImg) {
+        origImg.src = data.original;
+        origOverlay.src = data.original;
+      }
+      if (data.gradcam && gradImg) {
+        gradImg.src = data.gradcam;
+      }
+
+      // ── populate classification result card ──────────────────────────────
+      const conf = data.confidence != null ? Number(data.confidence) : 0;
+      const label = data.tumor_type || "—";
+      const normType = label.toLowerCase().replace(/\s|[-_]/g, "");
+
+      if (tumorType) tumorType.textContent = label;
+      if (confFill)  confFill.style.width   = conf.toFixed(1) + "%";
+      if (confScore) confScore.textContent  = conf.toFixed(1) + "%";
+
+      // style the card based on result
+      const tumorBox = document.getElementById('tumorResultBox');
+      const clsChip  = document.getElementById('clsChip');
+
+      if (normType === "notumor") {
+        if (tumorBox) {
+          tumorBox.style.background = "#f0fdf4";
+          tumorBox.style.border     = "1px solid #bbf7d0";
+        }
+        if (tumorType) tumorType.style.color = "#166534";
+        if (clsChip) {
+          clsChip.style.background   = "#dcfce7";
+          clsChip.style.color        = "#166534";
+          clsChip.style.borderColor  = "#bbf7d0";
+          clsChip.textContent        = "No Tumor Detected";
+        }
+        // hide gradcam/original section for no-tumor (nothing interesting)
+        const mriViz = document.getElementById('mriVizSection');
+        if (mriViz) mriViz.style.display = "none";
+        if (generateReportBtn) generateReportBtn.style.display = "none";
+      } else {
+        if (tumorBox) {
+          tumorBox.style.background = "#fff6f6";
+          tumorBox.style.border     = "1px solid #ffe0e0";
+        }
+        if (tumorType) tumorType.style.color = "#991b1b";
+        if (clsChip) {
+          clsChip.style.background   = "#ecfdf5";
+          clsChip.style.color        = "#0d7a49";
+          clsChip.style.borderColor  = "#c6f7da";
+          clsChip.textContent        = "Analysis Complete";
+        }
+        const mriViz = document.getElementById('mriVizSection');
+        if (mriViz) mriViz.style.display = "grid";
+        if (generateReportBtn) generateReportBtn.style.display = "inline-flex";
+      }
+
+      // show classification card
+      if (clsResultCard) clsResultCard.style.display = "block";
+
+      // ── segmentation overlay ─────────────────────────────────────────────
+      if (normType !== "notumor") {
+        if (hasMask && maskPath) {
+          maskOverlay.src = maskPath;
+          if (!origOverlay.src && origImg.src) origOverlay.src = origImg.src;
+          segCard.style.display = "block";
+        } else {
+          segCard.style.display = "none";
+        }
+      } else {
+        segCard.style.display = "none";
+      }
+      showFeedbackBox();
+    }
+    let previewObjectUrl = null;
+
+    function isNiftiFile(file) {
+      const name = (file.name || '').toLowerCase();
+      return name.endsWith('.nii') || name.endsWith('.nii.gz') || name.endsWith('.zip');
+    }
+
+    const HAS_2D_SCAN = {{ has_2d_scan | tojson }};
+    const HAS_3D_SCAN = {{ has_3d_scan | tojson }};
+
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      // Block 3D upload if case already has 2D scans — show notice
+      if (HAS_2D_SCAN && isNiftiFile(file)) {
+        e.target.value = "";
+        const notice = document.getElementById('no3dNotice');
+        if (notice) notice.style.display = 'flex';
+        document.getElementById('no2dNotice').style.display = 'none';
+        return;
+      }
+
+      // Block 2D upload if case already has 3D scans — show notice
+      if (HAS_3D_SCAN && !isNiftiFile(file)) {
+        e.target.value = "";
+        const notice = document.getElementById('no2dNotice');
+        if (notice) notice.style.display = 'flex';
+        document.getElementById('no3dNotice').style.display = 'none';
+        return;
+      }
+
+      // Hide both notices if user switches to a valid file
+      document.getElementById('no3dNotice').style.display = 'none';
+      document.getElementById('no2dNotice').style.display = 'none';
+
+      resetUI();
+
+      if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+
+      if (isNiftiFile(file)) {
+        // 3D NIfTI/ZIP — show badge + 3-plane instant preview
+        is3D = true;
+        const fnEl = document.getElementById('badge3dFileName');
+        if (fnEl) fnEl.textContent = file.name;
+        badge3d.style.display    = 'block';
+        uploadBox.style.display  = 'none';
+        btns.style.display       = 'flex';
+        preview.style.display    = 'none';   // hide old single-img preview
+
+        // Show the 3-panel grid immediately with placeholders
+        const p3d = document.getElementById('preview3d');
+        if (p3d) p3d.style.display = 'block';
+
+        // Fetch all 3 slices from backend — show spinner while waiting
+        const loadingEl  = document.getElementById('preview3dLoading');
+        const panelsEl   = document.getElementById('preview3dPanels');
+        if (loadingEl)  loadingEl.style.display  = 'block';
+        if (panelsEl)   panelsEl.style.display    = 'none';
+
+        const previewForm = new FormData();
+        previewForm.append('file', file);
+        fetch('/api/nifti_preview', { method: 'POST', body: previewForm })
+          .then(r => r.json())
+          .then(d => {
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (panelsEl)  panelsEl.style.display  = 'grid';
+            const axImg  = document.getElementById('prev3d-axial');
+            const corImg = document.getElementById('prev3d-coronal');
+            const sagImg = document.getElementById('prev3d-sagittal');
+            if (d.axial    && axImg)  { axImg.src  = d.axial;    axImg.style.display  = 'block'; }
+            if (d.coronal  && corImg) { corImg.src = d.coronal;  corImg.style.display = 'block'; }
+            if (d.sagittal && sagImg) { sagImg.src = d.sagittal; sagImg.style.display = 'block'; }
+            if (d.depth && d.height && d.width) {
+              const fnEl2 = document.getElementById('badge3dFileName');
+              if (fnEl2) fnEl2.textContent = `${file.name}  (${d.depth}×${d.height}×${d.width})`;
+            }
+          })
+          .catch(err => {
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (panelsEl)  panelsEl.style.display  = 'grid';
+            console.warn('[preview3d]', err);
+          });
+      } else {
+        // 2D image preview
+        is3D = false;
+        badge3d.style.display = 'none';
+        previewObjectUrl = URL.createObjectURL(file);
+        preview.src = previewObjectUrl;
+        preview.style.display = 'block';
+        uploadBox.style.display = 'none';
+        btns.style.display = 'flex';
+      }
+
+      if (actionButtons) actionButtons.style.display = "none";
+      if (generateReportBtn) generateReportBtn.disabled = true;
+    });
+
+    document.addEventListener("click", e => {
+      if (e.target.classList.contains("zoomable")) {
+        document.getElementById("modalImg").src = e.target.src;
+        document.getElementById("imgModal").style.display = "block";
+      }
+      if (e.target.classList.contains("close")) {
+        document.getElementById("imgModal").style.display = "none";
+      }
+    });
+    function renderBullets(ulEl, bullets) {
+      if (!ulEl) return;
+      ulEl.innerHTML = "";
+      (bullets || []).forEach(text => {
+        const li = document.createElement("li");
+        li.textContent = text;
+        ulEl.appendChild(li);
+      });
+    }
+
+    function bulletsToEditorText(bullets) {
+      return (bullets || []).join('\n');
+    }
+
+    function editorTextToBullets(text) {
+      return (text || '')
+        .split('\n')
+        .map(x => x.trim())
+        .filter(Boolean);
+    }
+
+    const reportInfoInputIds = ['reportDoctorName','reportDoctorEmail','reportPatientName','reportPatientPhone','reportPatientAge','reportPatientGender'];
+
+    function setReportEditMode(enabled) {
+      reportEditMode = enabled;
+
+      // Toggle info fields read-only state
+      reportInfoInputIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (enabled) {
+          el.removeAttribute('readonly');
+          el.style.background = '#fff';
+          el.style.border = '1px solid #dbe1f4';
+          el.style.cursor = 'text';
+        } else {
+          el.setAttribute('readonly', true);
+          el.style.background = 'transparent';
+          el.style.border = '1px solid transparent';
+          el.style.cursor = 'default';
+        }
+      });
+
+      if (enabled) {
+        findingsEditor.value = bulletsToEditorText(reportData?.findings_bullets || []);
+        impressionEditor.value = bulletsToEditorText(reportData?.impression_bullets || []);
+
+        findingsListEl.style.display = 'none';
+        impressionListEl.style.display = 'none';
+
+        findingsEditor.style.display = 'block';
+        impressionEditor.style.display = 'block';
+        reportEditActions.style.display = 'flex';
+
+        if (editReportBtn) editReportBtn.style.display = 'none';
+      } else {
+        findingsEditor.style.display = 'none';
+        impressionEditor.style.display = 'none';
+        reportEditActions.style.display = 'none';
+
+        findingsListEl.style.display = 'block';
+        impressionListEl.style.display = 'block';
+
+        if (editReportBtn) editReportBtn.style.display = 'flex';
+      }
+    }
+    async function runSegmentation(scanId) {
+      showProgress("Segmentation in Progress...", "Localizing tumor region using AI segmentation model");
+
+      let p = Math.max(60, Number(progressText.textContent.replace('%', '')) || 60);
+      setProgress(p);
+
+      segTicker = setInterval(() => {
+        p = Math.min(p + 1, 95);
+        setProgress(p);
+      }, 160);
+
+      const formData = new FormData();
+      formData.append("scan_id", scanId);
+
+      try {
+        const r = await fetch("/segment_only", { method: "POST", body: formData });
+        const d = await r.json();
+        console.log("SEGMENT_ONLY RESPONSE:", d);
+
+        // ✅ store report if returned 
+      if (d.findings_bullets || d.impression_bullets || d.impression) {
+        reportData = {
+          findings_bullets: d.findings_bullets || [],
+          impression_bullets: d.impression_bullets || (d.impression ? [d.impression] : [])
+        };
+        currentReportId = d.report_id || currentReportId || null;
+        if (generateReportBtn) generateReportBtn.disabled = false;
+      }
+
+
+        if (segTicker) { clearInterval(segTicker); segTicker = null; }
+
+        if (d.status !== "success" || !d.mask) {
+          // ✅ NEW (D): friendly message (optional)
+          showProgressError("Segmentation couldn’t be completed this time. You can still view the classification results.");
+          return false;
+        }
+
+        hasMask = true;
+        maskPath = d.mask;
+        return true;
+      } catch (e) {
+        if (segTicker) { clearInterval(segTicker); segTicker = null; }
+        // ✅ NEW (D): friendly message
+        showProgressError("Segmentation failed due to a network issue. Please try again.");
+        return false;
+      }
+    }
+
+    async function runSegmentation3D(scanId, zipFile) {
+      showProgress("3D Segmentation in Progress...", "Uploading 4-modality volume…");
+      let p = 10;
+      setProgress(p);
+
+      const tick3d = setInterval(() => {
+        p = Math.min(p + 1, 92);
+        setProgress(p);
+      }, 500);
+
+      const formData = new FormData();
+      formData.append("scan_id", scanId);
+      formData.append("file", zipFile);
+
+      try {
+        const r = await fetch("/segment_only_3d", { method: "POST", body: formData });
+        const d = await r.json();
+        clearInterval(tick3d);
+
+        if (d.findings_bullets || d.impression_bullets || d.impression) {
+          reportData = {
+            findings_bullets:  d.findings_bullets || [],
+            impression_bullets: d.impression_bullets || (d.impression ? [d.impression] : [])
+          };
+          currentReportId = d.report_id || currentReportId || null;
+          if (generateReportBtn) generateReportBtn.disabled = false;
+        }
+
+        if (d.status !== "success" || !d.slices) {
+          showProgressError(d.message || "3D Segmentation couldn't be completed. Please check the file is a valid .nii, .nii.gz, or .zip.", true);
+          return false;
+        }
+
+        showProgress("Done", "3D Segmentation complete.");
+        setProgress(100);
+
+        setTimeout(() => {
+          hideProgress();
+          render3DResults({
+            tumor_type: pendingData ? pendingData.tumor_type : "",
+            confidence:  pendingData ? pendingData.confidence : 0,
+            segmentation_model_used: "3d_glioma",
+            class_probabilities: null,
+            slices: d.slices,
+            plot3d_json: d.plot3d_json || null,
+            volume_metrics: d.volume_metrics || null
+          });
+          if (actionButtons) actionButtons.style.display = "flex";
+          if (generateReportBtn) {
+            generateReportBtn.style.display = "inline-flex";
+            generateReportBtn.disabled = false;
+          }
+        }, 250);
+
+        return true;
+      } catch (e) {
+        clearInterval(tick3d);
+        showProgressError("3D Segmentation failed due to a network issue. Please try again.", true);
+        return false;
+      }
+    }
+
+    // ─── 3D Results Renderer ──────────────────────────────────────────────────
+    function render3DResults(data) {
+      if (!results3d) return;
+      currentAnalysisIs3D = true;
+
+      // ── 3D results — no classification display needed ────────────────────
+
+      const modelBadge3d  = document.getElementById('modelBadge3d');
+      const slicesGrid3d  = document.getElementById('slicesGrid3d');
+      const slicesSec     = document.getElementById('slicesSection3d');
+
+      // ── colour legend + volume metrics badge ─────────────────────────────
+      if (modelBadge3d) {
+        if (data.segmentation_model_used === '3d_glioma') {
+          modelBadge3d.innerHTML = `
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px; font-size:13px; color:#374151;">
+              <i class="fa-solid fa-cube" style="color:#1d4ed8;"></i>
+              <strong>3D Glioma Segmentation</strong>
+              <span style="color:#9ca3af;">— multi-modality volume analysis</span>
+            </div>
+            `;
+        } else {
+          modelBadge3d.innerHTML = '<i class="fa-solid fa-layer-group" style="margin-right:4px; color:#1d4ed8;"></i>2D segmentation on representative slice';
+        }
+      }
+
+      // Store slices for PDF embedding
+      lastSlices3d = data.slices || [];
+
+      // ── populate slices grid (dark style matching scan_view) ─────────────
+      if (slicesGrid3d && data.slices && data.slices.length > 0) {
+        slicesGrid3d.innerHTML = '';
+        data.slices.forEach((s, i) => {
+          const card = document.createElement('div');
+          card.style.cssText = 'border-radius:10px; overflow:hidden; border:1px solid #1e293b; background:#0a0a1a;';
+          const imgSrc = s.overlay || s.slice || '';
+          card.innerHTML = `
+            <div style="font-size:10px; font-weight:600; color:#94a3b8; padding:5px 8px; border-bottom:1px solid #1e293b;">
+              Slice ${i + 1} &nbsp;(z=${s.slice_idx})
+            </div>
+            <img src="${imgSrc}" style="width:100%; display:block; object-fit:cover;" class="zoomable"
+                 alt="Slice ${i + 1}" onerror="this.src='/static/images/placeholder.png'">
+            `;
+          slicesGrid3d.appendChild(card);
+        });
+      }
+
+      // ── Show MPR explorer, hide 2×2 layout ───────────────────────────────────
+      const slicerLayout = document.getElementById('slicer3dLayout');
+      if (slicesSec)    slicesSec.style.display   = 'block';
+      if (slicerLayout) slicerLayout.style.display = 'none';
+
+      // Load Plotly figure from URL — fallback to standard path using scan_id
+      window._plot3dJson = null;
+      const _sid = data.scan_id || lastScanId || null;
+      window._plot3dUrl  = data.plot3d_url || (_sid ? `/static/uploads/plot3d_${_sid}.json` : null);
+      if (window._plot3dUrl) {
+        const _bustUrl = window._plot3dUrl + '?t=' + Date.now();
+        fetch(_bustUrl)
+          .then(r => r.ok ? r.text() : null)
+          .then(txt => { if (txt) window._plot3dJson = txt; })
+          .catch(() => {});
+      }
+
+      results3d.style.display = 'block';
+
+      // Show view toggle
+      const _vToggle = document.getElementById('viewToggle3d');
+      if (_vToggle) _vToggle.style.display = 'block';
+      switchView3d('slices');
+
+      // Load MPR slices
+      if (lastScanId) {
+        window._mprReady = false;
+        _mprShowLoading();
+        mprInit(lastScanId);
+      }
+      showFeedbackBox();
+    }
+
+    // ─── View toggle: MPR Slices ↔ 3D View ───────────────────────────────────
+    function switchView3d(view) {
+      const is3d        = view === '3d';
+      const slicesSec   = document.getElementById('slicesSection3d');
+      const slicer3d    = document.getElementById('slicer3dLayout');
+      const btnSlices   = document.getElementById('toggleBtnSlices');
+      const btn3d       = document.getElementById('toggleBtn3d');
+
+      if (slicesSec) slicesSec.style.display = is3d ? 'none' : 'block';
+      if (slicer3d)  slicer3d.style.display  = is3d ? 'block' : 'none';
+
+      if (btnSlices) Object.assign(btnSlices.style, { background: is3d ? '#f1f5f9' : '#2563eb', color: is3d ? '#475569' : '#fff' });
+      if (btn3d)     Object.assign(btn3d.style,     { background: is3d ? '#2563eb' : '#f1f5f9', color: is3d ? '#fff' : '#475569' });
+
+      if (is3d) {
+        // Copy current MPR images into the 2×2 cells
+        ['axial', 'coronal', 'sagittal'].forEach(p => {
+          const src  = document.getElementById(`mpr-img-${p}`)?.src || '';
+          const dest = document.getElementById(`slicer-${p}`);
+          if (dest && src) dest.src = src;
+        });
+
+        // Render Plotly if JSON available
+        if (!window._plot3dJson && window._plot3dUrl) {
+          fetch(window._plot3dUrl)
+            .then(r => r.ok ? r.text() : null)
+            .then(txt => { if (txt) { window._plot3dJson = txt; _renderPlotly3d(); } })
+            .catch(() => {});
+        } else {
+          _renderPlotly3d();
+        }
+      }
+    }
+
+    function _renderPlotly3d() {
+      const plotDiv = document.getElementById('plot3dDiv');
+      if (!window._plot3dJson || !plotDiv || typeof Plotly === 'undefined') return;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          try {
+            const figSpec = JSON.parse(window._plot3dJson);
+            Plotly.purge(plotDiv);
+            Plotly.newPlot(plotDiv, figSpec.data, figSpec.layout, {
+              responsive: true, displayModeBar: false, displaylogo: false
+            });
+            setTimeout(() => { try { Plotly.Plots.resize(plotDiv); } catch(e){} }, 150);
+            setTimeout(() => { try { Plotly.Plots.resize(plotDiv); } catch(e){} }, 500);
+          } catch(e) {
+            console.warn('Plotly render failed', e);
+          }
+        });
+      });
+    }
+
+    // ─── Back to slices (kept for compat) ─────────────────────────────────────
+    function goBackToSlices() { switchView3d('slices'); }
+
+    // ─── Legacy confirm3DSegmentation (replaced by toggle) ────────────────────
+    async function confirm3DSegmentation() {
+      switchView3d('3d');
+
+    }
+
+    // ─── MPR Viewer ──────────────────────────────────────────────────────────
+    window._mprReady   = false;
+    window._mprScanId  = null;
+    window._mprTotals  = { axial: 100, coronal: 100, sagittal: 100 };
+    window._mprInFlight = {};
+
+    function _mprShowLoading() {
+      ['axial','coronal','sagittal'].forEach(p => {
+        const img  = document.getElementById(`mpr-img-${p}`);
+        const spin = document.getElementById(`mpr-spin-${p}`);
+        const lbl  = document.getElementById(`mpr-lbl-${p}`);
+        const pfx  = {axial:'z', coronal:'y', sagittal:'x'};
+        if (img)  { img.src = ''; img.style.opacity = 0; }
+        if (spin) { spin.style.display = 'block'; spin.textContent = 'Loading…'; }
+        if (lbl)  lbl.textContent = `${pfx[p]} = –`;
+      });
+    }
+
+    function mprInit(scanId) {
+      window._mprScanId = scanId;
+      window._mprReady  = false;
+      const planes = ['axial', 'coronal', 'sagittal'];
+      let done = 0;
+      let errCount = 0;
+      planes.forEach(plane => {
+        fetch(`/api/mpr_slice/${scanId}?plane=${plane}`)
+          .then(r => r.json())
+          .then(d => {
+            if (d.error) {
+              console.warn('[MPR]', plane, d.error);
+              const spin = document.getElementById(`mpr-spin-${plane}`);
+              if (spin) { spin.textContent = 'Run 3D Analysis to view slices'; spin.style.color = '#94a3b8'; }
+              errCount++;
+              return;
+            }
+            const total = d.total || 100;
+            window._mprTotals[plane] = total;
+            const mid = Math.floor(total / 2);
+            const sl  = document.getElementById(`mpr-sl-${plane}`);
+            if (sl) { sl.max = total - 1; sl.value = mid; }
+            _mprUpdate(plane, d);
+            done++;
+            if (done === planes.length) window._mprReady = true;
+          })
+          .catch(e => {
+            console.warn('[MPR init]', e);
+            const spin = document.getElementById(`mpr-spin-${plane}`);
+            if (spin) { spin.textContent = 'Could not load slice'; spin.style.color = '#ef4444'; }
+          });
+      });
+    }
+
+    function mprFetch(plane, idx) {
+      const scanId = window._mprScanId || lastScanId;
+      if (!scanId) return;
+      // Debounce: cancel previous in-flight for this plane
+      clearTimeout(window._mprInFlight[plane]);
+      window._mprInFlight[plane] = setTimeout(() => {
+        const numEl = document.getElementById(`mpr-num-${plane}`);
+        if (numEl) numEl.textContent = idx;
+        fetch(`/api/mpr_slice/${scanId}?plane=${plane}&idx=${idx}`)
+          .then(r => r.json())
+          .then(d => { if (!d.error) _mprUpdate(plane, d); })
+          .catch(e => console.warn('[MPR fetch]', e));
+      }, 60);
+    }
+
+    function _mprUpdate(plane, d) {
+      const img  = document.getElementById(`mpr-img-${plane}`);
+      const lbl  = document.getElementById(`mpr-lbl-${plane}`);
+      const num  = document.getElementById(`mpr-num-${plane}`);
+      const spin = document.getElementById(`mpr-spin-${plane}`);
+      const pfx  = { axial: 'z', coronal: 'y', sagittal: 'x' };
+      if (img) {
+        img.style.opacity = 0;
+        img.onload = () => {
+          img.style.opacity = 1;
+          if (spin) spin.style.display = 'none';
+        };
+        img.src = d.image;
+      }
+      if (lbl) lbl.textContent = `${pfx[plane]} = ${d.idx}`;
+      if (num) num.textContent = d.idx;
+      const sl = document.getElementById(`mpr-sl-${plane}`);
+      if (sl && sl.value != d.idx) sl.value = d.idx;
+    }
+
+    // ─── 3D Upload & Analysis ─────────────────────────────────────────────────
+    async function run3DAnalysis(file) {
+      setProgress(0);
+      showProgress("3D Volume Analysis…", "Uploading NIfTI file…");
+      clsStageStart = Date.now();
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("patient_id", "{{ request.args.get('patient_id') or '' }}");
+      formData.append("case_id", document.getElementById("caseId").value || "");
+      formData.append("scan_date", document.getElementById("scanDate").value || "");
+
+      return new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/analyze_mri_3d", true);
+
+        xhr.upload.addEventListener("progress", (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 20);
+            setProgress(percent);
+          }
+        });
+
+        xhr.upload.addEventListener("load", () => {
+          showProgress("3D Volume Analysis…", "Running 3D segmentation…");
+          stopClsTicker();
+          clsTicker = setInterval(() => {
+            const current = Number(progressText.textContent.replace('%', '')) || 0;
+            if (current < 50) setProgress(current + 1);
+            else stopClsTicker();
+          }, 300);
+        });
+
+        xhr.onreadystatechange = async () => {
+          if (xhr.readyState !== XMLHttpRequest.DONE) return;
+          stopClsTicker();
+
+          if (xhr.status !== 200) {
+            let errMsg = "Please verify the NIfTI file is valid and try again.";
+            try {
+              const errData = JSON.parse(xhr.responseText || "{}");
+              if (errData.message) errMsg = errData.message;
+            } catch (_) {}
+            showProgress("Analysis Failed", "3D analysis could not be completed.");
+            showProgressError(errMsg);
+            setAnalyzeBusy(false);
+            resolve(null);
+            return;
+          }
+
+          const data = JSON.parse(xhr.responseText || "{}");
+          lastScanId = data.scan_id || null;
+          window._mprReady = false;
+          setProgress(70);
+          showProgress("3D Volume Analysis…", "Running segmentation…");
+
+          const segModel = data.segmentation_model_used;
+          if (segModel) {
+            let p = 70;
+            const segTick = setInterval(() => {
+              p = Math.min(p + 1, 95);
+              setProgress(p);
+            }, 200);
+            await new Promise(r => setTimeout(r, 1200));
+            clearInterval(segTick);
+          }
+
+          showProgress("Done", "3D analysis completed successfully.");
+          setProgress(100);
+
+          // Store report data — same as runSegmentation3D
+          if (data.findings_bullets || data.impression_bullets) {
+            reportData = {
+              findings_bullets:   data.findings_bullets  || [],
+              impression_bullets: data.impression_bullets || []
+            };
+            currentReportId = data.report_id || null;
+            if (generateReportBtn) generateReportBtn.disabled = false;
+          }
+
+          setTimeout(() => {
+            hideProgress();
+            render3DResults(data);
+            if (actionButtons) actionButtons.style.display = "flex";
+            if (generateReportBtn) {
+              const normType = (data.tumor_type || "").toLowerCase().replace(/\s|[-_]/g, "");
+              generateReportBtn.style.display = normType === 'notumor' ? 'none' : 'inline-flex';
+              generateReportBtn.disabled = false;
+            }
+            setAnalyzeBusy(false);
+            resolve(data);
+          }, 250);
+        };
+
+        xhr.send(formData);
+      });
+    }
+
+    document.getElementById('analyzeBtn').addEventListener('click', async () => {
+      const file = fileInput.files?.[0];
+      if (!file) {
+        alert('Please upload MRI image first.');
+        return;
+      }
+
+      const _keep2d = !is3D && !!previewObjectUrl;
+      resetUI(true, _keep2d); // keep previews visible during analysis
+      if (actionButtons) actionButtons.style.display = "none";
+      if (generateReportBtn) generateReportBtn.disabled = true;
+      reportData = null;
+      currentReportId = null;
+      reportEditMode = false;
+      if (findingsEditor) findingsEditor.value = "";
+      if (impressionEditor) impressionEditor.value = "";
+      if (reportEditActions) reportEditActions.style.display = "none";
+      if (editReportBtn) editReportBtn.style.display = "flex";
+      if (findingsListEl) findingsListEl.style.display = "block";
+      if (impressionListEl) impressionListEl.style.display = "block";
+      if (findingsEditor) findingsEditor.style.display = "none";
+      if (impressionEditor) impressionEditor.style.display = "none";
+      setAnalyzeBusy(true);
+
+      // Route to 3D pipeline for NIfTI files
+      if (is3D || isNiftiFile(file)) {
+        await run3DAnalysis(file);
+        return;
+      }
+
+      // ─── Existing 2D pipeline below (UNCHANGED) ───────────────────────────
+      setProgress(0);
+      showProgress("Classification in Progress...", "Uploading MRI image…");
+      clsStageStart = Date.now();
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("patient_id", "{{ request.args.get('patient_id') or '' }}");
+      formData.append("case_id", document.getElementById("caseId").value || "");
+      formData.append("scan_date", document.getElementById("scanDate").value || "");
+
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", "/analyze_mri", true);
+
+      // ✅ UPDATED (B): Upload progress 0 -> 35%
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 35);
+          setProgress(percent);
+        }
+      });
+
+      // ✅ NEW (B): After upload finishes, animate 35 -> 60 while waiting for server
+      xhr.upload.addEventListener("load", () => {
+        showProgress("Classification in Progress...", "Classifying tumor type using AI model…");
+
+        stopClsTicker();
+        clsTicker = setInterval(() => {
+          const current = Number(progressText.textContent.replace('%', '')) || 0;
+          if (current < 60) setProgress(current + 1);
+          else stopClsTicker();
+        }, 220);
+      });
+
+      xhr.onreadystatechange = async () => {
+        if (xhr.readyState !== XMLHttpRequest.DONE) return;
+
+        // ✅ NEW (B): stop classification ticker once we got response
+        stopClsTicker();
+
+        // ✅ UPDATED (D): no alert, show friendly message inside progress card
+        if (xhr.status !== 200) {
+          showProgress("Analysis Failed", "We couldn’t complete the analysis.");
+          showProgressError("Please try uploading the MRI image again. If the issue persists, use a different image format (PNG/JPG).");
+          setAnalyzeBusy(false);
+          return;
+        }
+
+        // ✅ server response arrived
+        showProgress("Classification in Progress...", "Finalizing classification results…");
+
+        pendingData = JSON.parse(xhr.responseText || "{}");
+
+        lastScanId = pendingData.scan_id || null;
+        window._mprReady = false;
+        hasMask = !!pendingData.mask;
+        maskPath = pendingData.mask || null;
+
+        // ✅ classification done (cap at 60)
+        setProgress(60);
+        await waitAtLeast(clsStageStart, 700);
+
+        if (pendingData.original && origImg) {
+          origImg.src = pendingData.original;
+          origOverlay.src = pendingData.original;
+        }
+        if (pendingData.gradcam && gradImg) {
+          gradImg.src = pendingData.gradcam;
+        }
+
+        const normType = (pendingData.tumor_type || "").toLowerCase().replace(/\s|[-_]/g, "");
+
+        if (normType === "notumor") {
+          showProgress("Done", "No tumor detected. Segmentation skipped.");
+          setProgress(100);
+
+          setTimeout(() => {
+            hideProgress();
+            renderFinalResults(pendingData);
+            if (actionButtons) actionButtons.style.display = "flex";
+            if (generateReportBtn) generateReportBtn.disabled = false;
+            setAnalyzeBusy(false);
+          }, 250);
+
+          return;
+        }
+
+        if (hasMask && maskPath) {
+          showProgress("Done", "Classification and segmentation completed.");
+          setProgress(100);
+
+          setTimeout(() => {
+            hideProgress();
+            renderFinalResults(pendingData);
+            if (actionButtons) actionButtons.style.display = "flex";
+            if (generateReportBtn) generateReportBtn.disabled = false;
+            setAnalyzeBusy(false);
+          }, 250);
+
+          return;
+        }
+
+        if (!lastScanId) {
+          showProgress("Done", "Segmentation skipped (missing scan_id).");
+          setProgress(100);
+
+          setTimeout(() => {
+            hideProgress();
+            renderFinalResults(pendingData);
+            if (actionButtons) actionButtons.style.display = "flex";
+            if (generateReportBtn) generateReportBtn.disabled = false;
+            setAnalyzeBusy(false);
+          }, 250);
+
+          return;
+        }
+
+        // ─── All tumors (including Glioma): auto-run 2D segmentation ────────
+        const segOk = await runSegmentation(lastScanId);
+
+        showProgress("Done", segOk ? "Analysis completed successfully." : "Segmentation failed.");
+        setProgress(100);
+
+        setTimeout(() => {
+          hideProgress();
+          renderFinalResults(pendingData);
+          if (actionButtons) actionButtons.style.display = "flex";
+          if (generateReportBtn) generateReportBtn.disabled = false;
+          setAnalyzeBusy(false);
+        }, 250);
+      };
+
+      xhr.send(formData);
+    });
+
+    // ─── Segmentation Choice Buttons ─────────────────────────────────────────
+    const seg2dBtn = document.getElementById('seg2dBtn');
+    const seg3dBtn = document.getElementById('seg3dBtn');
+
+    if (seg2dBtn) {
+      seg2dBtn.addEventListener('click', async () => {
+        if (segChoiceCard) segChoiceCard.style.display = "none";
+        seg2dBtn.disabled = true;
+        if (seg3dBtn) seg3dBtn.disabled = true;
+
+        const segOk = await runSegmentation(lastScanId);
+        showProgress("Done", segOk ? "2D Segmentation complete." : "Segmentation failed.");
+        setProgress(100);
+        setTimeout(() => {
+          hideProgress();
+          renderFinalResults(pendingData);
+          if (actionButtons) actionButtons.style.display = "flex";
+          if (generateReportBtn) generateReportBtn.disabled = false;
+          seg2dBtn.disabled = false;
+          if (seg3dBtn) seg3dBtn.disabled = false;
+        }, 250);
+      });
+    }
+
+    if (seg3dBtn) {
+      seg3dBtn.addEventListener('click', () => {
+        if (segChoiceCard) segChoiceCard.style.display = "none";
+        if (seg3dPanel) seg3dPanel.style.display = "block";
+        // reset NIfTI state
+        if (zipFileInput) zipFileInput.value = "";
+        if (zipLabel) zipLabel.textContent = "Click to upload NIfTI / ZIP";
+        const nb = document.getElementById('seg3dFileName');
+        if (nb) nb.style.display = "none";
+        if (runSeg3dBtn) { runSeg3dBtn.disabled = true; runSeg3dBtn.style.opacity = "0.6"; runSeg3dBtn.style.cursor = "not-allowed"; }
+      });
+    }
+
+    const seg3dBackBtn = document.getElementById('seg3dBackBtn');
+    if (seg3dBackBtn) {
+      seg3dBackBtn.addEventListener('click', () => {
+        if (seg3dPanel) seg3dPanel.style.display = "none";
+        if (segChoiceCard) segChoiceCard.style.display = "block";
+      });
+    }
+
+    if (zipFileInput) {
+      zipFileInput.addEventListener('change', () => {
+        const f = zipFileInput.files[0];
+        if (f) {
+          if (zipLabel) zipLabel.textContent = "Click to upload NIfTI / ZIP";
+          const nameEl  = document.getElementById('seg3dFileNameText');
+          const nameBadge = document.getElementById('seg3dFileName');
+          if (nameEl) nameEl.textContent = f.name;
+          if (nameBadge) nameBadge.style.display = "block";
+          if (runSeg3dBtn) { runSeg3dBtn.disabled = false; runSeg3dBtn.style.opacity = "1"; runSeg3dBtn.style.cursor = "pointer"; }
+        }
+      });
+    }
+
+    if (runSeg3dBtn) {
+      runSeg3dBtn.addEventListener('click', async () => {
+        const f = zipFileInput && zipFileInput.files[0];
+        if (!f) return;
+        if (seg3dPanel) seg3dPanel.style.display = "none";
+        await runSegmentation3D(lastScanId, f);
+      });
+    }
+
+    const overlay = document.getElementById("sidebarOverlay");
+
+    toggleBtn.addEventListener("click", () => {
+      if (window.innerWidth > 768) {
+        sidebar.classList.toggle("collapsed");
+      } else {
+        sidebar.classList.toggle("active");
+        overlay.classList.toggle("active");
+      }
+    });
+
+    overlay.addEventListener("click", () => {
+      sidebar.classList.remove("active");
+      overlay.classList.remove("active");
+    });
+
+    const logoutBtn = document.getElementById("logoutBtn");
+    const logoutPopup = document.getElementById("logoutPopup");
+    const confirmLogout = document.getElementById("confirmLogout");
+    const cancelLogout = document.getElementById("cancelLogout");
+
+    logoutBtn.addEventListener("click", function(event) {
+      event.preventDefault();
+      logoutPopup.style.display = "flex";
+    });
+
+    cancelLogout.addEventListener("click", function() {
+      logoutPopup.style.display = "none";
+    });
+
+    confirmLogout.addEventListener("click", function() {
+      logoutPopup.style.display = "none";
+      sessionStorage.clear();
+      localStorage.clear();
+      window.location.href = "{{ url_for('logout') }}";
+    });
+
+    window.addEventListener("click", function(event) {
+      if (event.target === logoutPopup) {
+        logoutPopup.style.display = "none";
+      }
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+      const initialImage = "{{ first_image or '' }}";
+      if (!initialImage) return;
+
+      const fileUrl = initialImage;
+      const origName = fileUrl.split('/').pop() || "initial_scan";
+      const is3DInit = /\.(zip|nii|nii\.gz)$/i.test(origName);
+
+      uploadBox.style.display = "none";
+      btns.style.display = "flex";
+
+      if (is3DInit) {
+        // 3D file — hide old preview, show 3-panel grid
+        is3D = true;
+        preview.style.display = "none";
+        preview.src = "";
+
+        const fnEl = document.getElementById('badge3dFileName');
+        if (fnEl) fnEl.textContent = origName;
+        badge3d.style.display = "block";
+
+        const p3d        = document.getElementById('preview3d');
+        const loadingEl  = document.getElementById('preview3dLoading');
+        const panelsEl   = document.getElementById('preview3dPanels');
+        if (p3d)       p3d.style.display      = 'block';
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (panelsEl)  panelsEl.style.display  = 'none';
+
+        // Fetch file as blob → POST to /api/nifti_preview
+        fetch(fileUrl)
+          .then(res => res.blob())
+          .then(blob => {
+            const file = new File([blob], origName, { type: blob.type });
+
+            // Register in fileInput for later analysis
+            const container = new DataTransfer();
+            container.items.add(file);
+            fileInput.files = container.files;
+
+            // Send to preview API
+            const pf = new FormData();
+            pf.append('file', file);
+            return fetch('/api/nifti_preview', { method: 'POST', body: pf });
+          })
+          .then(r => r.json())
+          .then(d => {
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (panelsEl)  panelsEl.style.display  = 'grid';
+            const axImg  = document.getElementById('prev3d-axial');
+            const corImg = document.getElementById('prev3d-coronal');
+            const sagImg = document.getElementById('prev3d-sagittal');
+            if (d.axial    && axImg)  { axImg.src  = d.axial;    axImg.style.display  = 'block'; }
+            if (d.coronal  && corImg) { corImg.src = d.coronal;  corImg.style.display = 'block'; }
+            if (d.sagittal && sagImg) { sagImg.src = d.sagittal; sagImg.style.display = 'block'; }
+            if (d.depth && d.height && d.width) {
+              const fnEl2 = document.getElementById('badge3dFileName');
+              if (fnEl2) fnEl2.textContent = `${origName}  (${d.depth}×${d.height}×${d.width})`;
+            }
+          })
+          .catch(err => {
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (panelsEl)  panelsEl.style.display  = 'grid';
+            console.warn('[init preview3d]', err);
+          });
+
+      } else {
+        // 2D image — original behaviour
+        preview.src = fileUrl;
+        preview.style.display = "block";
+
+        fetch(fileUrl)
+          .then(res => res.blob())
+          .then(blob => {
+            const file = new File([blob], origName, { type: blob.type });
+            const container = new DataTransfer();
+            container.items.add(file);
+            fileInput.files = container.files;
+          });
+      }
+    });
+    function openReportModal() {
+      if (!reportModal) return;
+      setReportEditMode(false);
+      // Adapt title and note based on analysis type
+      const titleEl = reportModal.querySelector('.report-title');
+      const noteEl  = document.getElementById('reportModalNote');
+      const chip    = reportModal.querySelector('.report-chip');
+      const slicesDl    = document.getElementById('slicesDownloadSection');
+      const slicesLink  = document.getElementById('slicesDownloadLink');
+      if (currentAnalysisIs3D) {
+        if (titleEl) titleEl.textContent = '3D Segmentation Report';
+        if (chip) { chip.textContent = 'AI-Generated · 3D'; chip.style.background = '#dbeafe'; chip.style.color = '#1d4ed8'; }
+        if (noteEl) noteEl.textContent = 'Note: Content is based on 3D volumetric NIfTI segmentation (nnUNet). Correlate with full clinical context and histopathology before any decision.';
+        if (slicesDl) slicesDl.style.display = 'block';
+        if (slicesLink && lastScanId) slicesLink.href = `/download_slices_3d?scan_id=${lastScanId}`;
+      } else {
+        if (titleEl) titleEl.textContent = 'Radiology Report';
+        if (chip) { chip.textContent = 'AI-Generated'; chip.style.background = ''; chip.style.color = ''; }
+        if (noteEl) noteEl.textContent = 'Note: Content is based only on the model outputs (pixel-based 2D metrics); correlate with full MRI series.';
+        if (slicesDl) slicesDl.style.display = 'none';
+      }
+      reportModal.style.display = "flex";
+    }
+
+    function closeReportModal() {
+      if (!reportModal) return;
+      reportModal.style.display = "none";
+      setReportEditMode(false);
+    }
+
+    if (closeReportModalBtn) {
+      closeReportModalBtn.addEventListener("click", closeReportModal);
+    }
+
+    if (editReportBtn) {
+  editReportBtn.addEventListener("click", () => {
+    if (!reportData) return;
+    setReportEditMode(true);
+  });
+}
+
+    if (cancelEditReportBtn) {
+      cancelEditReportBtn.addEventListener("click", () => {
+        setReportEditMode(false);
+      });
+    }
+
+    if (saveReportBtn) {
+      saveReportBtn.addEventListener("click", async () => {
+        // If no report ID yet, try to save first
+        if (!currentReportId) {
+          if (lastScanId) {
+            try {
+              const fd = new FormData();
+              fd.append("scan_id", lastScanId);
+              const sr = await fetch("/save_report_for_scan", { method: "POST", body: fd });
+              const sd = await sr.json();
+              if (sd.status === "success") currentReportId = sd.report_id || null;
+            } catch (_) {}
+          }
+          if (!currentReportId) {
+            alert("No saved report was found for this scan.");
+            return;
+          }
+        }
+
+        const findings   = editorTextToBullets(findingsEditor.value);
+        const impression = editorTextToBullets(impressionEditor.value);
+
+        if (!findings.length && !impression.length) {
+          alert("Report content cannot be empty.");
+          return;
+        }
+
+        saveReportBtn.disabled = true;
+        saveReportBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:8px;"></i>Saving...';
+
+        try {
+          const r = await fetch("/update_report_content", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              report_id:    currentReportId,
+              findings,
+              impression,
+              doctor_name:   document.getElementById('reportDoctorName')?.value  || '',
+              doctor_email:  document.getElementById('reportDoctorEmail')?.value || '',
+              patient_name:  document.getElementById('reportPatientName')?.value || '',
+              patient_phone: document.getElementById('reportPatientPhone')?.value || '',
+              patient_age:   document.getElementById('reportPatientAge')?.value  || '',
+              patient_gender:document.getElementById('reportPatientGender')?.value || ''
+            })
+          });
+
+          const d = await r.json();
+
+          if (!r.ok || d.error) {
+            throw new Error(d.error || "Failed to update report");
+          }
+
+          reportData = { findings_bullets: findings, impression_bullets: impression };
+          renderBullets(findingsListEl, findings);
+          renderBullets(impressionListEl, impression);
+          setReportEditMode(false);
+        } catch (e) {
+          alert("Could not save report changes: " + e.message);
+        } finally {
+          saveReportBtn.disabled = false;
+          saveReportBtn.innerHTML = 'Save Changes';
+        }
+      });
+    }
+
+    if (reportModal) {
+      reportModal.addEventListener("click", (e) => {
+        if (e.target === reportModal) closeReportModal();
+      });
+    }
+
+    let reportSaved = false;   // true once doctor explicitly saves the report
+
+    if (generateReportBtn) {
+      generateReportBtn.addEventListener("click", async () => {
+        if (!lastScanId) {
+          alert("Please analyze an MRI first.");
+          return;
+        }
+
+        // If already saved, open modal directly
+        if (reportSaved) {
+          if (reportData) {
+            renderBullets(findingsListEl, reportData.findings_bullets || []);
+            renderBullets(impressionListEl, reportData.impression_bullets || []);
+          }
+          openReportModal();
+          return;
+        }
+
+        // Save first, then open modal
+        generateReportBtn.disabled = true;
+        const origLabel = generateReportBtn.innerHTML;
+        generateReportBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:8px;"></i>Generating Report...';
+        try {
+          const fd = new FormData();
+          fd.append("scan_id", lastScanId);
+          const r = await fetch("/save_report_for_scan", { method: "POST", body: fd });
+          const d = await r.json();
+          if (d.status === "success") {
+            reportSaved = true;
+            currentReportId = d.report_id || currentReportId;
+            generateReportBtn.innerHTML = '<i class="fa-solid fa-check" style="margin-right:8px;"></i>Report Saved';
+          } else {
+            generateReportBtn.innerHTML = origLabel;
+          }
+        } catch (e) {
+          generateReportBtn.innerHTML = origLabel;
+        } finally {
+          generateReportBtn.disabled = false;
+        }
+
+        // Open modal only after save is complete
+        if (reportData) {
+          renderBullets(findingsListEl, reportData.findings_bullets || []);
+          renderBullets(impressionListEl, reportData.impression_bullets || []);
+          openReportModal();
+        }
+      });
+    }
+
+    async function downloadReportPDF() {
+      if (!reportData) {
+        alert("No report available. Please generate a report first.");
+        return;
+      }
+
+      const pdfBtn = document.getElementById("downloadPdfBtn");
+      if (pdfBtn) { pdfBtn.disabled = true; pdfBtn.textContent = "Preparing…"; }
+
+      const doctorName = document.getElementById("reportDoctorName")?.value || "Dr. {{ doctor.name }}";
+      const doctorEmail = document.getElementById("reportDoctorEmail")?.value || "{{ doctor.email }}";
+      const patientName = document.getElementById("reportPatientName")?.value || "";
+      const patientPhone = document.getElementById("reportPatientPhone")?.value || "";
+      const patientAge = document.getElementById("reportPatientAge")?.value || "";
+      const patientGender = document.getElementById("reportPatientGender")?.value || "";
+      const patientId = document.getElementById("patientId").value || "N/A";
+      const scanDate = document.getElementById("scanDate").value || "N/A";
+      const reportDate = new Date().toLocaleDateString("en-US", { year:"numeric", month:"long", day:"numeric" });
+
+      const findings = (reportData.findings_bullets || []).map(b => `<li>${b}</li>`).join("");
+      const impression = (reportData.impression_bullets || []).map(b => `<li>${b}</li>`).join("");
+
+      const rawOrigSrc = document.getElementById("origImg")?.src || "";
+      const rawMaskSrc = document.getElementById("maskOverlay")?.src || "";
+
+      // Convert image URLs to base64 data URLs so they embed directly in the popup
+      async function toDataURL(url) {
+        if (!url || url.startsWith("data:image/gif") || url.startsWith("data:,") || url === window.location.href) return null;
+        try {
+          const resp = await fetch(url, { cache: "force-cache" });
+          if (!resp.ok) return null;
+          const blob = await resp.blob();
+          return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror  = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+        } catch { return null; }
+      }
+
+      const origSrc = (!currentAnalysisIs3D) ? await toDataURL(rawOrigSrc) : null;
+      const maskSrc = (!currentAnalysisIs3D) ? await toDataURL(rawMaskSrc) : null;
+
+      // For 3D scans: capture the 3 MPR viewer images (Axial, Coronal, Sagittal)
+      let mprImages = [];   // [{label, num, b64}, ...]
+      if (currentAnalysisIs3D) {
+        if (pdfBtn) { pdfBtn.disabled = true; pdfBtn.textContent = "Loading slices…"; }
+        const planes = [
+          { id: "axial",    label: "AXIAL",    numId: "mpr-num-axial"    },
+          { id: "coronal",  label: "CORONAL",  numId: "mpr-num-coronal"  },
+          { id: "sagittal", label: "SAGITTAL", numId: "mpr-num-sagittal" },
+        ];
+        for (const p of planes) {
+          const imgEl  = document.getElementById(`mpr-img-${p.id}`);
+          const numEl  = document.getElementById(p.numId);
+          const src    = imgEl ? imgEl.src : "";
+          const b64    = src ? await toDataURL(src) : null;
+          const num    = numEl ? numEl.textContent.trim() : "–";
+          if (b64) mprImages.push({ label: p.label, num, b64 });
+        }
+      }
+
+      if (pdfBtn) { pdfBtn.disabled = false; pdfBtn.textContent = "Download PDF"; }
+
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Brainalyze – Radiology Report</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Poppins',Arial,sans-serif; background:#fff; color:#1a1a2e; font-size:13px; }
+    .page { max-width:780px; margin:0 auto; padding:30px 40px; }
+
+    /* Header */
+    .header { display:flex; justify-content:space-between; align-items:center; padding-bottom:16px; border-bottom:3px solid #506DCA; margin-bottom:20px; }
+    .header-left { display:flex; align-items:center; gap:12px; }
+    .brand-name { font-size:22px; font-weight:700; color:#506DCA; }
+    .brand-sub { font-size:11px; color:#6b7280; margin-top:2px; }
+    .report-title-block { text-align:right; }
+    .report-title-block h1 { font-size:18px; font-weight:700; color:#1a1a2e; }
+    .ai-badge { display:inline-block; background:#d1fae5; color:#065f46; font-size:10px; font-weight:600; padding:3px 10px; border-radius:20px; margin-top:4px; border:1px solid #6ee7b7; }
+
+    /* Info grid */
+    .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; background:#f8faff; border:1px solid #dbe1f4; border-radius:12px; padding:16px 20px; }
+    .info-item label { font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:2px; }
+    .info-item span { font-size:13px; font-weight:500; color:#1a1a2e; }
+
+    /* Images */
+    .images-section { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+    .img-card { border:1px solid #dbe1f4; border-radius:12px; overflow:hidden; }
+    .img-card .img-label { background:#f0f4ff; font-size:10px; font-weight:600; color:#506DCA; text-transform:uppercase; letter-spacing:0.5px; padding:6px 12px; border-bottom:1px solid #dbe1f4; }
+    .img-card img { width:100%; height:180px; object-fit:cover; display:block; }
+
+    /* Report sections */
+    .section { margin-bottom:18px; }
+    .section-label { font-size:10px; font-weight:700; color:#506DCA; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; padding-bottom:4px; border-bottom:1px solid #e5e7eb; }
+    .section ul { padding-left:18px; }
+    .section ul li { margin-bottom:5px; line-height:1.6; color:#1a1a2e; }
+    .section-box { background:#f8faff; border:1px solid #dbe1f4; border-radius:10px; padding:14px 18px; }
+
+    /* Footer */
+    .footer { display:flex; justify-content:space-between; align-items:center; padding-top:14px; border-top:1px solid #e5e7eb; font-size:10px; color:#9ca3af; }
+    .footer strong { color:#506DCA; }
+
+    .divider { height:1px; background:#e5e7eb; margin:14px 0; }
+
+    /* MPR Slices grid */
+    .mpr-section { margin-bottom:20px; }
+    .mpr-section .section-label { font-size:10px; font-weight:700; color:#506DCA; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; padding-bottom:4px; border-bottom:1px solid #e5e7eb; }
+    .mpr-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .mpr-card { border-radius:10px; overflow:hidden; background:#080808; border:1px solid #1e293b; }
+    .mpr-card .mpr-header { display:flex; justify-content:space-between; align-items:center; padding:5px 10px; font-size:9px; font-weight:700; letter-spacing:1px; color:#fff; border-bottom:1px solid #1e293b; }
+    .mpr-card .mpr-header.axial    { background:#7f1d1d; }
+    .mpr-card .mpr-header.coronal  { background:#14532d; }
+    .mpr-card .mpr-header.sagittal { background:#1e3a5f; }
+    .mpr-card img { width:100%; display:block; object-fit:cover; aspect-ratio:1/1; }
+
+    @media print {
+      body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+      .page { padding:20px 30px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <div>
+          <div class="brand-name">&#129504; Brainalyze</div>
+          <div class="brand-sub">AI-Powered Brain MRI Analysis</div>
+        </div>
+      </div>
+      <div class="report-title-block">
+        <h1>${currentAnalysisIs3D ? '3D Segmentation Report' : 'Radiology Report'}</h1>
+        <span class="ai-badge">${currentAnalysisIs3D ? '&#10003; AI-Generated &bull; 3D' : '&#10003; AI-Generated'}</span>
+      </div>
+    </div>
+
+    <!-- Info Grid -->
+    <div class="info-grid">
+      <div class="info-item">
+        <label>Radiologist</label>
+        <span>${doctorName}</span>
+      </div>
+      <div class="info-item">
+        <label>Email</label>
+        <span>${doctorEmail}</span>
+      </div>
+      <div class="info-item">
+        <label>Patient Name</label>
+        <span>${patientName || patientId}</span>
+      </div>
+      <div class="info-item">
+        <label>Phone Number</label>
+        <span>${patientPhone || '—'}</span>
+      </div>
+      <div class="info-item">
+        <label>Age</label>
+        <span>${patientAge || '—'}</span>
+      </div>
+      <div class="info-item">
+        <label>Gender</label>
+        <span>${patientGender || '—'}</span>
+      </div>
+      <div class="info-item">
+        <label>Scan Date</label>
+        <span>${scanDate}</span>
+      </div>
+      <div class="info-item">
+        <label>Report Date</label>
+        <span>${reportDate}</span>
+      </div>
+    </div>
+
+    <!-- Images section -->
+    ${origSrc ? `
+    <div class="images-section">
+      <div class="img-card">
+        <div class="img-label">Original MRI Scan</div>
+        <img src="${origSrc}" alt="Original MRI">
+      </div>
+      ${maskSrc ? `
+      <div class="img-card">
+        <div class="img-label">Tumor Segmentation Mask</div>
+        <img src="${maskSrc}" alt="Segmentation">
+      </div>` : ""}
+    </div>` : ""}
+
+    <!-- MPR Slices (Axial / Coronal / Sagittal with tumor overlay) -->
+    ${currentAnalysisIs3D && mprImages.length > 0 ? `
+    <div class="mpr-section">
+      <div class="section-label">MPR Segmentation Views</div>
+      <div class="mpr-grid">
+        ${mprImages.map(m => `
+          <div class="mpr-card">
+            <div class="mpr-header ${m.label.toLowerCase()}">${m.label}<span style="font-weight:400; opacity:.75;">${m.num !== "–" ? " · " + m.num : ""}</span></div>
+            <img src="${m.b64}" alt="${m.label}">
+          </div>`).join("")}
+      </div>
+    </div>` : ""}
+
+    <!-- Findings -->
+    <div class="section">
+      <div class="section-label">Findings</div>
+      <div class="section-box">
+        <ul>${findings}</ul>
+      </div>
+    </div>
+
+    <!-- Impression -->
+    <div class="section">
+      <div class="section-label">Impression</div>
+      <div class="section-box">
+        <ul>${impression}</ul>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div>Generated by <strong>Brainalyze AI</strong> &bull; Confidential – For Medical Use Only</div>
+      <div>${reportDate}</div>
+    </div>
+  </div>
+
+  <script>window.onload = () => { window.print(); }<\/script>
+</body>
+</html>`;
+
+      const w = window.open("", "_blank");
+      w.document.write(html);
+      w.document.close();
+    }
+
+    // ─── Feedback box functions ───────────────────────────────────────────────
+    function showFeedbackBox() {
+      const card = document.getElementById('feedbackCard');
+      if (!card) return;
+      document.getElementById('fbPending').style.display = 'flex';
+      document.getElementById('fbReasonArea').style.display = 'none';
+      document.getElementById('fbThanks').style.display = 'none';
+      const txt = document.getElementById('fbReasonText');
+      if (txt) txt.value = '';
+      card.style.opacity = '1';
+      card.style.display = 'block';
+    }
+
+    function fbAgree() {
+      fbSend(true, '');
+      const card = document.getElementById('feedbackCard');
+      card.style.transition = 'opacity .4s ease';
+      card.style.opacity = '0';
+      setTimeout(() => { card.style.display = 'none'; }, 420);
+    }
+
+    function fbShowReason() {
+      document.getElementById('fbPending').style.display = 'none';
+      document.getElementById('fbReasonArea').style.display = 'block';
+    }
+
+    function fbCancelReason() {
+      document.getElementById('fbReasonArea').style.display = 'none';
+      document.getElementById('fbPending').style.display = 'flex';
+      const txt = document.getElementById('fbReasonText');
+      if (txt) { txt.value = ''; txt.style.borderColor = '#dbe1f4'; }
+    }
+
+    function fbSubmit() {
+      const txt = document.getElementById('fbReasonText');
+      const reason = txt ? txt.value.trim() : '';
+      if (!reason) {
+        if (txt) txt.style.borderColor = '#ef4444';
+        return;
+      }
+      fbSend(false, reason);
+      document.getElementById('fbReasonArea').style.display = 'none';
+      const thanks = document.getElementById('fbThanks');
+      thanks.style.display = 'flex';
+      const card = document.getElementById('feedbackCard');
+      setTimeout(() => {
+        card.style.transition = 'opacity .5s ease';
+        card.style.opacity = '0';
+        setTimeout(() => { card.style.display = 'none'; }, 520);
+      }, 4000);
+    }
+
+    function fbSend(agrees, reason) {
+      if (!lastScanId) return;
+      fetch('/api/scan_approval', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scan_id: lastScanId,
+          decision: agrees ? 'approved' : 'rejected',
+          reason: reason
+        })
+      }).catch(e => console.warn('Feedback save error:', e));
+    }
+
+    finishBtn.addEventListener("click", async () => {
+      const patientId = "{{ patient_id }}";
+      const caseId = "{{ case_id }}";
+
+      if (lastScanId) {
+        try {
+          const fd = new FormData();
+          fd.append("scan_id", lastScanId);
+          await fetch("/finish_scan", { method: "POST", body: fd });
+        } catch (err) {
+          console.error("Could not save scan:", err);
+        }
+      }
+
+      window.location.href = `/patients/${patientId}/cases/${caseId}`;
+    });
+  </script>
+
+<script src="/static/js/nav.js"></script>
+<script src="/static/js/helpbot.js"></script>
+</body>
+</html>

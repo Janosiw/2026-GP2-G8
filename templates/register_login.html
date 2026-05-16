@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<!--
+  register_login.html
+  =====================
+  This page handles both Sign Up and Log In for Brainalyze radiologist accounts.
+
+  SIGN UP FLOW:
+    1. User fills in: name, email, phone (+966), password
+    2. Firebase creates the account (createUserWithEmailAndPassword)
+    3. A verification email is sent via the backend (/send_verification_email)
+    4. User data is saved in Firestore under "Radiologists/{uid}"
+    5. User is redirected to the email verification waiting page (/verify)
+
+  LOG IN FLOW:
+    1. User enters email and password
+    2. Firebase verifies credentials (signInWithEmailAndPassword)
+    3. If email is NOT verified → redirect to /verify
+    4. If email IS verified → fetch user's phone number from Firestore
+    5. Send an SMS OTP to the phone via Firebase Phone Authentication
+    6. Save verificationId, uid, and phoneNumber in sessionStorage
+    7. Redirect to /2FA_Prosses to complete the OTP step
+
+  The card flips between Sign Up and Log In using CSS 3D rotation.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&family=Cairo:wght@300;400;600&display=swap" rel="stylesheet">
+  <title>Brainalyze - Sign up / log in </title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  /* ── Reset & base font ── */
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', 'Cairo', Arial, sans-serif;
+  }
+
+  /* ── Full-screen centered layout ── */
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f7faff;
+  }
+
+  /* ── Logo in the top-left corner ── */
+  .site-logo {
+    position: absolute;
+    top: 25px;
+    left: 25px;
+    width: 90px;
+    cursor: pointer;
+    transition: transform .3s ease, filter .3s ease;
+  }
+  .site-logo:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+  }
+
+  /* ── Wrapper that holds the card; reverses direction on flip ── */
+  .container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: all .6s ease;
+    margin-top: 7%;
+  }
+
+  /* ── The white card with 3D flip capability ── */
+  .form-box {
+    width: 540px;
+    margin: 3rem auto;
+    padding: 40px 32px;
+    height: 600px;
+    background: #f4f7fb;
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, .2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: left;
+    position: relative;
+    transition: transform .8s ease;
+    transform-style: preserve-3d; /* needed for the 3D flip animation */
+  }
+
+  /* ── Each side of the card is absolutely positioned ── */
+  .form-content {
+    position: absolute;
+    width: 80%;
+    backface-visibility: hidden; /* hide the back face when flipped */
+  }
+
+  /* ── Sign Up side faces forward by default ── */
+  .signup {
+    transform: rotateY(0deg);
+  }
+
+  .form-content p {
+    text-align: center;
+    margin-top: 35px;
+  }
+  .form-content p a {
+    text-decoration: none;
+    font-weight: 600;
+    color: #506DCA;
+  }
+  .form-content p a:hover {
+    text-decoration: underline;
+  }
+
+  /* ── Log In side starts rotated 180° (hidden behind the card) ── */
+  .login {
+    transform: translate(-50%, -50%) rotateY(180deg);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    color: #506DCA;
+  }
+
+  /* ── When .flipped is added, card flips to show the Log In side ── */
+  .form-box.flipped {
+    transform: rotateY(180deg);
+  }
+
+  h2 {
+    text-align: center;
+    color: #506DCA;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+  }
+
+  /* ── Input fields ── */
+  input {
+    width: 100%;
+    padding: 11px 38px 11px 10px;
+    border-radius: 10px;
+    border: 1px solid #cbd5e1;
+    background: #f9fafb;
+    font-size: .95rem;
+    margin-bottom: 8px;
+  }
+
+  /* ── Submit buttons ── */
+  button {
+    padding: 10px;
+    width: 100%;
+    border-radius: 10px;
+    border: none;
+    background: #506DCA;
+    color: white;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: .3s;
+    margin-top: 6px;
+    position: relative;
+    overflow: hidden;
+  }
+  button:hover {
+    background: #1e40af;
+    transform: translateY(-1px);
+  }
+  button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* ── Inline success / error messages below buttons ── */
+  .inline-msg {
+    font-size: .85rem;
+    text-align: center;
+    margin-top: 6px;
+    opacity: 0;
+    transition: opacity .25s;
+  }
+  .inline-msg.show {
+    opacity: 1;
+  }
+  .inline-msg.error {
+    color: #d92b2b;
+  }
+  .inline-msg.success {
+    color: #1e2a47;
+  }
+
+  /* ── Password field with eye-toggle icon ── */
+  .password-wrapper {
+    position: relative;
+  }
+  .eye-icon {
+    position: absolute;
+    right: 10px;
+    top: 12px;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    fill: #1e2a47;
+    opacity: 0.7;
+  }
+
+  /* ── Flip container direction when showing Log In ── */
+  .container.reverse {
+    flex-direction: row-reverse;
+  }
+
+  /* ── Real-time password strength hints shown under the password field ── */
+  .pw-hints {
+    font-size: .8rem;
+    color: #435273;
+    margin-top: 6px;
+    text-align: left;
+    line-height: 1.4;
+  }
+
+  /* ── Phone number input with Saudi flag prefix ── */
+  .flag {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 0 7px;
+    border-right: 1.8px solid #cbd5e1;
+    border-radius: 10px 0 0 10px;
+    font-size: .95rem;
+  }
+  .phone-input {
+    display: flex;
+    align-items: center;
+    border: 1.8px solid #cbd5e1;
+    border-radius: 10px;
+    background-color: #f9fbff;
+    transition: all 0.3s ease;
+    margin-bottom: 8px;
+  }
+  .flag-img {
+    width: 22px;
+    border-radius: 2px;
+    object-fit: cover;
+  }
+  #signupPhone {
+    margin-bottom: 0;
+    border: none;
+  }
+
+  /* ── Spinner shown inside the button while async work is running ── */
+  .btn-loading-spinner {
+    width: 18px;
+    height: 18px;
+    border: 3px solid #ffffff;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: auto;
+  }
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ── Password hint colors: red = not met, green = met ── */
+  .pw-hints .bad { color: #464444; }
+  .pw-hints .ok  { color: #1e8e3e; }
+
+  /* ── Responsive: stack vertically on tablets/phones ── */
+  @media (max-width: 900px) {
+    body {
+      align-items: flex-start;
+      padding: 1.5rem 1rem;
+    }
+    .container {
+      flex-direction: column !important;
+      gap: 1.5rem;
+      perspective: 1200px;
+      width: 90%;
+      margin-top: 7%;
+    }
+    .form-box {
+      width: 100%;
+      margin-top: 5rem;
+      padding: 6rem 1.5rem;
+      border-radius: 1.25rem;
+      transform-style: preserve-3d;
+      transition: transform .7s ease;
+    }
+    .form-content {
+      width: 80%;
+      position: absolute;
+      top: 0;
+      backface-visibility: hidden;
+      padding: 0 .2rem;
+      padding-top: 5%;
+    }
+    .form-box.flipped {
+      transform: rotateY(180deg);
+    }
+    .signup {
+      transform: rotateY(0deg);
+    }
+    .login {
+      transform: rotateY(180deg);
+    }
+    .form-content p {
+      font-size: .9rem;
+    }
+    input {
+      font-size: .92rem;
+      padding: 10px;
+    }
+    button {
+      font-size: .95rem;
+      padding: 12px;
+    }
+    .pw-hints {
+      font-size: .75rem;
+    }
+    /* On small screens, disable 3D and show/hide sections with display instead */
+    .form-box {
+      transform: none !important;
+    }
+    .form-content {
+      position: relative;
+      width: 100%;
+      transform: none !important;
+      left: 0;
+      top: 0;
+      backface-visibility: visible;
+    }
+    .login, .signup {
+      position: relative;
+      transform: none !important;
+    }
+    .form-box:not(.flipped) #signupForm { display: block; }
+    .form-box:not(.flipped) #loginForm  { display: none;  }
+    .form-box.flipped #signupForm { display: none;  }
+    .form-box.flipped #loginForm  { display: block; }
+  }
+
+  @media (max-width: 480px) {
+    .form-box {
+      max-width: 95vw;
+      padding: 1.5rem 1rem;
+    }
+    input {
+      font-size: .85rem;
+      padding: 10px;
+    }
+    button {
+      font-size: .9rem;
+    }
+    h2 {
+      font-size: 1.2rem;
+    }
+    .inline-msg {
+      font-size: .78rem;
+    }
+  }
+</style>
+</head>
+
+<body>
+  <!-- Logo: clicking it goes back to the home/landing page -->
+  <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Brainalyze Logo" class="site-logo"
+    onclick="window.location.href='{{ url_for('index') }}'">
+
+  <div class="container" id="container">
+    <!-- Placeholder for optional decorative image beside the card -->
+    <div class="image-box" id="imageBox"></div>
+
+    <!-- Main card: holds both Sign Up and Log In panels -->
+    <div class="form-box" id="formBox">
+
+      <!-- ── SIGN UP PANEL ── -->
+      <div class="form-content signup" id="signupForm">
+        <h2>Sign Up</h2>
+
+        <!-- Full name field -->
+        <input type="text" id="signupName" placeholder="User name" required>
+
+        <!-- Email field -->
+        <input type="email" id="signupEmail" placeholder="Email" required>
+
+        <!-- Phone number with Saudi country code prefix -->
+        <div class="phone-input">
+          <span class="flag">
+            <img src="{{ url_for('static', filename='images/saudi-flag.png') }}" alt="SA Flag" class="flag-img">
+            +966
+          </span>
+          <!-- Only the local part (9 digits starting with 5) is entered here -->
+          <input type="text" id="signupPhone" name="phone" placeholder="Phone number 5XX..." inputmode="tel" required
+            pattern="^5\d{8}$" maxlength="9" title="Phone number must start with 5 and contain 9 digits.">
+        </div>
+
+        <!-- Password field with real-time strength hints and show/hide toggle -->
+        <div class="password-wrapper">
+          <input type="password" id="signupPassword" placeholder="Password" required>
+          <!-- Live password strength hints; updated as user types -->
+          <div class="pw-hints" id="pwHints">
+            <div id="hintLength" class="bad">• At least 8 characters</div>
+            <div id="hintUpper"  class="bad">• Uppercase letter (A-Z)</div>
+            <div id="hintLower"  class="bad">• Lowercase letter (a-z)</div>
+            <div id="hintNumber" class="bad">• Number (0-9)</div>
+            <div id="hintSymbol" class="bad">• Special character (!@#$...)</div>
+          </div>
+          <!-- Eye icon to toggle password visibility -->
+          <svg class="eye-icon" onclick="togglePassword('signupPassword', this)" viewBox="0 0 24 24">
+            <path d="M12 5c-7.633 0-12 7-12 7s4.367 7 12 7 12-7 12-7-4.367-7-12-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
+            <circle cx="12" cy="12" r="2.5" />
+          </svg>
+        </div>
+
+        <button id="signupBtn">Sign Up</button>
+
+        <!-- Error / success feedback shown below the button -->
+        <p class="inline-msg error"   id="signupError"></p>
+        <p class="inline-msg success" id="signupSuccess"></p>
+
+        <!-- Switch to the Log In panel -->
+        <p>Already have an account? <a id="toLogin">Log In</a></p>
+      </div>
+
+      <!-- ── LOG IN PANEL (starts rotated 180° behind the card) ── -->
+      <div class="form-content login" id="loginForm">
+        <h2>Log In</h2>
+
+        <!-- Email & password inputs -->
+        <input type="email" id="loginEmail" placeholder="Email" required>
+        <div class="password-wrapper">
+          <input type="password" id="loginPassword" placeholder="Password" required>
+          <svg class="eye-icon" onclick="togglePassword('loginPassword', this)" viewBox="0 0 24 24">
+            <path d="M12 5c-7.633 0-12 7-12 7s4.367 7 12 7 12-7 12-7-4.367-7-12-7zm0 12a5 5 0 1 1 0-10 5 5 0 0 1 0 10z" />
+            <circle cx="12" cy="12" r="2.5" />
+          </svg>
+        </div>
+
+        <button id="loginBtn">Log In</button>
+
+        <!-- Feedback messages -->
+        <p class="inline-msg error"   id="loginError"></p>
+        <p class="inline-msg success" id="loginSuccess"></p>
+
+        <!-- Links for password reset and switching to Sign Up -->
+        <p>Forgot your password? <a href="{{ url_for('forget') }}">Reset password</a></p>
+        <p>Don't have an account? <a id="toSignup">Sign Up</a></p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Firebase SDK (ES module) ── -->
+  <script type="module">
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import {
+      getAuth,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      RecaptchaVerifier,
+      PhoneAuthProvider,
+      updateProfile
+    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    // Firebase project configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyC5bb6M-sEVu9JL7mkVLFvkv44k8JIG9Es",
+      authDomain: "brainalyze.firebaseapp.com",
+      projectId: "brainalyze",
+      storageBucket: "brainalyze.firebasestorage.app",
+      messagingSenderId: "930694068293",
+      appId: "1:930694068293:web:72fd905080497218010b2c",
+      measurementId: "G-FJ99J54EYR"
+    };
+
+    // Initialize Firebase app, Auth, and Firestore
+    const appfb = initializeApp(firebaseConfig);
+    const auth  = getAuth(appfb);
+    const db    = getFirestore(appfb);
+    let recaptchaVerifier = null;
+
+function getRecaptchaVerifierInstance() {
+  if (!recaptchaVerifier) {
+    recaptchaVerifier = new RecaptchaVerifier(auth, "recaptcha-container", {
+      size: "invisible"
+    });
+  }
+  return recaptchaVerifier;
+}
+
+    // ── Helper: toggle password field between hidden and visible ──
+    window.togglePassword = function (id, icon) {
+      const field = document.getElementById(id);
+      field.type = field.type === "password" ? "text" : "password";
+      icon.style.opacity = field.type === "text" ? "1" : "0.7";
+    };
+
+    // ── Helper: show a temporary inline message (error or success) ──
+    function showInlineMessage(id, msg, isError = true) {
+      const el = document.getElementById(id);
+      el.textContent = msg;
+      el.classList.add("show");
+      el.classList.toggle("error",   isError);
+      el.classList.toggle("success", !isError);
+      setTimeout(() => el.classList.remove("show"), 4000); // auto-hide after 4 s
+    }
+
+    // ── Validation patterns ──
+    const passwordPolicyRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$/;
+    const emailPattern        = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    // ── Update password-strength hint colors as the user types ──
+    function updatePasswordHints(pw) {
+      document.getElementById("hintLength").className = pw.length >= 8          ? "ok" : "bad";
+      document.getElementById("hintUpper") .className = /[A-Z]/.test(pw)        ? "ok" : "bad";
+      document.getElementById("hintLower") .className = /[a-z]/.test(pw)        ? "ok" : "bad";
+      document.getElementById("hintNumber").className = /[0-9]/.test(pw)        ? "ok" : "bad";
+      document.getElementById("hintSymbol").className = /[^A-Za-z0-9]/.test(pw) ? "ok" : "bad";
+    }
+
+    // ── Helper: swap button text with a loading spinner during async calls ──
+    function setLoading(btn, isLoading) {
+      if (isLoading) {
+        btn.disabled = true;
+        if (!btn.dataset.original) btn.dataset.original = btn.textContent;
+        btn.innerHTML = `<div class="btn-loading-spinner"></div>`;
+      } else {
+        btn.disabled = false;
+        btn.textContent = btn.dataset.original || 'Sign Up';
+      }
+    }
+
+    // Update password hints whenever the user types in the password field
+    document.getElementById("signupPassword").addEventListener("input", (e) => {
+      updatePasswordHints(e.target.value);
+    });
+
+    // ──────────────────────────────────────────────────────────────
+    // SIGN UP: create account, send verification email, save to DB
+    // ──────────────────────────────────────────────────────────────
+    document.getElementById("signupBtn").addEventListener("click", async (e) => {
+      e.preventDefault();
+
+      const btn = document.getElementById("signupBtn");
+      if (btn.disabled) return;
+      setLoading(btn, true);
+
+      try {
+        // Read form values
+        const name     = document.getElementById("signupName").value.trim();
+        const email    = document.getElementById("signupEmail").value.trim();
+        const password = document.getElementById("signupPassword").value.trim();
+        const phoneRaw = document.getElementById("signupPhone").value.trim().replace(/\D/g, "");
+        const phone    = "+966" + phoneRaw; // prepend Saudi country code
+
+        // Check password policy
+        const pwValid =
+          password.length >= 8 &&
+          /[A-Z]/.test(password) &&
+          /[a-z]/.test(password) &&
+          /[0-9]/.test(password) &&
+          /[^A-Za-z0-9]/.test(password);
+
+        // ── Client-side validation ──
+        if (!name || !email || !password) {
+          showInlineMessage("signupError", "Please fill all required fields");
+          setLoading(btn, false);
+          return;
+        }
+        if (!emailPattern.test(email)) {
+          showInlineMessage("signupError", "Please enter a valid email address.");
+          setLoading(btn, false);
+          return;
+        }
+        const phoneRegex = /^5\d{8}$/;
+        if (!phoneRegex.test(phoneRaw)) {
+          showInlineMessage("signupError", "Phone number must start with 5 and contain exactly 9 digits.");
+          setLoading(btn, false);
+          return;
+        }
+        if (!pwValid) {
+          showInlineMessage("signupError", "Password does not meet all requirements.");
+          setLoading(btn, false);
+          return;
+        }
+
+        // ── Step 1: Create the Firebase Auth account ──
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // ── Step 2: Set the display name in Firebase Auth ──
+        await updateProfile(user, { displayName: name });
+
+        // ── Step 3: Send verification email via backend ──
+        await fetch("/send_verification_email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email, name: name })
+        });
+
+        // ── Step 4: Store user data in Firestore via the backend ──
+        // The backend uses Python's hashlib to hash the password safely
+        // (avoids the browser crypto.subtle API which requires strict HTTPS).
+        const signupRes = await fetch("/api/signup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            uid:            user.uid,
+            FullName:       name,
+            Email:          email,
+            Password:       password,
+            ContactNumber:  phone || "",
+            ProfilePicture: "{{ url_for('static', filename='images/user.png') }}",
+          })
+        });
+        if (!signupRes.ok) {
+          const err = await signupRes.json();
+          throw new Error(err.error || "Failed to save user data.");
+        }
+
+        // ── Step 5: Save email in sessionStorage so the verify page can use it ──
+        showInlineMessage("signupSuccess", "Signup successful! Check your email to verify.", false);
+        sessionStorage.setItem("pending_email", email);
+        sessionStorage.setItem("pending_name",  name);
+        setLoading(btn, false);
+
+        // Redirect to the email verification waiting page after a short delay
+        setTimeout(() => (window.location.href = "{{ url_for('verify') }}"), 1500);
+
+      } catch (error) {
+        console.error(error);
+        let msg = "Signup failed.";
+        if (error.code === "auth/email-already-in-use") msg = "Email already registered.";
+        else if (error.code === "auth/weak-password")   msg = "Password too weak.";
+        showInlineMessage("signupError", msg);
+        setLoading(btn, false);
+      }
+    });
+
+    // ──────────────────────────────────────────────────────────────
+    // LOG IN: verify credentials, check email, send phone OTP
+    // ──────────────────────────────────────────────────────────────
+    document.getElementById("loginBtn").addEventListener("click", async (e) => {
+      e.preventDefault();
+
+      const btn = document.getElementById("loginBtn");
+      if (btn.disabled) return;
+      setLoading(btn, true);
+
+      const email    = loginEmail.value.trim();
+      const password = loginPassword.value.trim();
+
+      if (!email || !password) {
+        showInlineMessage("loginError", "Please fill all fields");
+        setLoading(btn, false);
+        return;
+      }
+
+      try {
+        // ── Step 1: Sign in with Firebase Auth ──
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // ── Step 2: Require email verification before proceeding ──
+        if (!user.emailVerified) {
+          showInlineMessage("loginError", "Please verify your email first.");
+          sessionStorage.setItem("pending_email", email);
+          setTimeout(() => window.location.href = "{{ url_for('verify') }}", 1200);
+          setLoading(btn, false);
+          return;
+        }
+
+        // ── Step 3: Fetch the user's phone number from Firestore ──
+        const snap = await getDoc(doc(db, "Radiologists", user.uid));
+        const data = snap.data();
+
+        if (!data) {
+          showInlineMessage("loginError", "Account not found in database.");
+          setLoading(btn, false);
+          return;
+        }
+
+        const phone = data.ContactNumber;
+        if (!phone) {
+          showInlineMessage("loginError", "No phone number found for this user.");
+          setLoading(btn, false);
+          return;
+        }
+
+        // ── Step 4: Set up invisible reCAPTCHA (required by Firebase Phone Auth) ──
+        const appVerifier = getRecaptchaVerifierInstance();
+
+        // ── Step 5: Trigger SMS OTP to the user's registered phone number ──
+        const provider        = new PhoneAuthProvider(auth);
+        const verificationId = await provider.verifyPhoneNumber(phone, appVerifier);
+
+        // ── Step 6: Save OTP session data for the 2FA page to use ──
+        sessionStorage.setItem("verificationId", verificationId);
+        sessionStorage.setItem("uid",            user.uid);
+        sessionStorage.setItem("phoneNumber",    phone);
+
+        showInlineMessage("loginSuccess", "Verification code sent to your phone...", false);
+
+        // Redirect to the OTP verification page
+        setTimeout(() => { window.location.href = "/2FA_Prosses"; }, 800);
+
+      } catch (error) {
+        console.error(error);
+
+        // Map common Firebase error codes to user-friendly messages
+let msg = "Login failed. Please try again.";
+if (error.code === "auth/invalid-credential" || error.code === "auth/wrong-password") {
+  msg = "Incorrect email or password.";
+} else if (error.code === "auth/invalid-email") {
+  msg = "Invalid email format.";
+} else if (error.code === "auth/user-not-found") {
+  msg = "No account found with this email.";
+} else if (error.code === "auth/too-many-requests") {
+  msg = "Too many failed attempts. Try again later.";
+} else if (error.code === "auth/billing-not-enabled") {
+  msg = "Firebase billing is not enabled for phone authentication.";
+} else if (error.code === "auth/operation-not-allowed") {
+  msg = "Phone authentication is not enabled in Firebase.";
+}
+        showInlineMessage("loginError", msg);
+        setLoading(btn, false);
+      }
+    });
+
+    // ── Card flip: toggle between Sign Up and Log In panels ──
+    const toLogin  = document.getElementById("toLogin");
+    const toSignup = document.getElementById("toSignup");
+    const formBox  = document.getElementById("formBox");
+    const container = document.getElementById("container");
+
+    // Flip card to show Log In
+    toLogin.addEventListener("click",  () => { formBox.classList.add("flipped");    container.classList.add("reverse");    });
+    // Flip card back to show Sign Up
+    toSignup.addEventListener("click", () => { formBox.classList.remove("flipped"); container.classList.remove("reverse"); });
+
+  </script>
+
+  <!-- ── Non-module script: handle deep-link hash on page load ── -->
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const formBox   = document.getElementById("formBox");
+      const container = document.getElementById("container");
+
+      // If the URL ends with #login, pre-flip to the Log In panel
+      if (window.location.hash === "#login") {
+        formBox.classList.add("flipped");
+        container.classList.add("reverse");
+      }
+
+      // If the URL ends with #signup, make sure Sign Up is showing
+      if (window.location.hash === "#signup") {
+        formBox.classList.remove("flipped");
+        container.classList.remove("reverse");
+      }
+    });
+  </script>
+
+  <!-- Invisible reCAPTCHA anchor required by Firebase Phone Auth -->
+  <div id="recaptcha-container"></div>
+
+</body>
+</html>

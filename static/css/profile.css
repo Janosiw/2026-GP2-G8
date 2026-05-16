@@ -1,0 +1,395 @@
+:root {
+  --muted: #555;
+  --soft: #e0e6ff;
+}
+
+body {
+  font-family: 'Poppins', 'Cairo', 'Arial', sans-serif;
+}
+
+.main {
+  padding: 28px;
+  margin-top: 3%;
+  transition: margin-left 0.35s ease;
+}
+
+.sidebar.collapsed ~ .main-wrapper {
+  margin-left: 85px;
+}
+
+.main {
+  flex: 1;
+  padding: 40px 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  transition: all 0.3s ease;
+  margin-top: 3%;
+}
+
+.container {
+  background-color: var(--card);
+  width: 50%;
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 6px 16px rgba(80, 109, 202, 0.15);
+  margin: 0px auto 80px;
+  transition: width 0.3s ease, box-shadow 0.3s ease;
+}
+
+.sidebar.collapsed ~ .main-wrapper .container {
+  width: 750px;
+  box-shadow: 0 8px 20px rgba(80, 109, 202, 0.18);
+}
+
+
+
+.profile-header h2 {
+  color: var(--brand);
+  font-size: 26px;
+  margin: 0;
+}
+
+.edit-icon {
+  width: 20%;
+  height: 28px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.edit-icon:hover {
+  transform: scale(1.2);
+}
+
+label {
+  display: block;
+  margin-top: 12px;
+  margin-bottom: 6px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--brand);
+  text-align: left;
+}
+
+.profile-hint {
+  display: none;
+}
+
+input {
+  width: 100%;
+  height: 54px;
+  padding: 0 16px;
+  margin-top: 6px;
+  border: 1.8px solid #ccd4ff;
+  border-radius: 14px;
+  font-size: 15px;
+  background-color: #f9fbff;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+input:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 8px rgba(80, 109, 202, 0.3);
+}
+
+.button-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 30px;
+}
+
+.save-btn,
+.cancel-btn {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.save-btn {
+  background-color: var(--brand);
+  color: white;
+  box-shadow: 0 4px 10px rgba(80, 109, 202, 0.3);
+}
+
+.save-btn:hover {
+  background-color: #3f58b8;
+}
+
+.cancel-btn {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: #7f8c8d;
+}
+
+.profile-picture-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.profile-pic {
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #506DCA;
+  box-shadow: 0 6px 16px rgba(80, 109, 202, 0.25);
+  background-color: #f7faff;
+  padding: 4px;
+  transition: transform 0.3s ease;
+  pointer-events: none;
+}
+
+.profile-pic:hover {
+  transform: scale(1.05);
+}
+
+.phone-input {
+  display: flex;
+  align-items: center;
+  border: 1.8px solid #ccd4ff;
+  border-radius: 14px;
+  background-color: #f9fbff;
+  transition: 0.3s ease;
+  width: 100%;
+  margin-top: 6px;
+  overflow: hidden;
+  box-sizing: border-box;
+  min-height: 54px;
+}
+
+.phone-input:focus-within {
+  border-color: var(--brand);
+  box-shadow: 0 0 8px rgba(80, 109, 202, 0.3);
+}
+
+.flag {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #eef2ff;
+  color: var(--brand);
+  padding: 0 15px;
+  height: 54px;
+  border-right: 1.8px solid #ccd4ff;
+  border-radius: 10px 0 0 10px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.flag-img {
+  width: 22px;
+  border-radius: 2px;
+  object-fit: cover;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.2);
+}
+
+.phone-input input {
+  border: none !important;
+  outline: none;
+  margin-top: 0 !important;
+  font-size: 15px;
+  padding: 0 14px;
+  height: 54px;
+  border-radius: 0;
+  background: transparent !important;
+  width: 100%;
+  box-shadow: none !important;
+}
+
+#pwdRequirements div{
+  text-align: left;
+  padding-left: 4px;
+}
+
+.container:not(.edit-mode) input,
+.container:not(.edit-mode) .phone-input {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding-left: 0;
+  color: #2b3170;
+  pointer-events: none;
+}
+
+.container:not(.edit-mode) .phone-input input {
+  padding-left: 0 !important;
+}
+
+.container:not(.edit-mode) .phone-input {
+  border: none !important;
+}
+
+.container:not(.edit-mode) .phone-input {
+  display: none !important;
+}
+
+.container:not(.edit-mode) .phone-display {
+  display: block;
+  padding: 0;
+  font-size: 16px;
+  color: #2b3170;
+}
+
+.container.edit-mode input {
+  background: #f9fbff !important;
+  border: 1.8px solid #ccd4ff !important;
+  pointer-events: auto;
+}
+
+.container.edit-mode .phone-input input {
+  border: none !important;
+}
+
+.container.edit-mode .phone-input {
+  border: 1.8px solid #ccd4ff !important;
+  background: #f9fbff !important;
+}
+
+.container.edit-mode .phone-display {
+  display: none !important;
+}
+
+.toast-container {
+  position: fixed;
+  top: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.toast {
+  background: #506DCA;
+  color: white;
+  padding: 10px 10px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  opacity: 0;
+  transform: translateY(-20px);
+  animation: slideDown 0.4s forwards;
+}
+
+.toast.success {
+  background: #10b981 !important;
+}
+
+
+.toast.error {
+  background: #d9534f;
+}
+
+
+
+@keyframes slideDown {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden !important;
+    width: 100% !important;
+  }
+
+  .container {
+    width: 80% !important;
+  }
+
+  .profile-picture-wrapper img {
+    width: 100px;
+    height: 100px;
+  }
+
+  label {
+    margin-top: 1px !important;
+  }
+
+  .container.edit-mode {
+    width: 80% !important;
+  }
+
+  .sidebar {
+    position: fixed !important;
+    top: 0 !important;
+    left: -260px !important;
+    width: 190px !important;
+    height: 100vh !important;
+    background: #ffffff !important;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    transition: left 0.35s ease !important;
+    z-index: 2000 !important;
+  }
+
+  .sidebar.active {
+    left: 0 !important;
+  }
+
+  #docheader {
+    left: 0 !important;
+    width: 94% !important;
+    position: fixed !important;
+    top: 0 !important;
+    z-index: 1500 !important;
+    background: #f7faff !important;
+  }
+
+  .main {
+    margin-top: 90px !important;
+    padding: 16px !important;
+  }
+
+      .footer-medical {
+        margin-left: 0 !important;
+        width: 100% !important;
+      }
+
+      .fm-wrapper {
+        display: flex;
+        flex-direction: row !important;
+        justify-content: space-between;
+        align-items: center;
+        text-align: center !important;
+        gap: 10px !important;
+        flex-wrap: nowrap;
+      }
+
+      .fm-left,
+      .fm-center,
+      .fm-right {
+        flex: 0 0 auto;
+      }
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(2px);
+  z-index: 1666;
+}
+
+.sidebar-overlay.active {
+  display: block;
+}

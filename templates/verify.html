@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Brainalyze - Verify Email</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', 'Cairo', Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f7faff;
+      position: relative;
+    }
+
+    .site-logo {
+      position: absolute;
+      top: 25px;
+      left: 25px;
+      width: 90px;
+      cursor: pointer;
+      filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .3));
+    }
+
+    .container {
+      background: #f2f5fb;
+      padding: 50px 40px;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, .2);
+      text-align: center;
+      width: 340px;
+    }
+
+    h2 {
+      color: #1e2a47;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #444;
+      margin-bottom: 20px;
+      font-size: .9rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: #506DCA;
+      color: white;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: .3s;
+    }
+
+    button:hover {
+      background: #1e40af;
+    }
+
+    .message {
+      font-size: .9rem;
+      margin-top: 10px;
+    }
+
+    .resend {
+      margin-top: 15px;
+      font-size: .85rem;
+    }
+
+    .resend a {
+      color: #506DCA;
+     
+      cursor: pointer;
+    }
+    .resend:hover{
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+
+  <img src="{{ url_for('static', filename='images/logo.png') }}" class="site-logo"
+    onclick="window.location.href='{{ url_for('index') }}'">
+
+  <div class="container">
+    <h2>Check your inbox</h2>
+    <p>A verification link has been sent to your email. Please check your inbox to activate your account.</p>
+
+    <p class="resend">Didn’t receive the email? <a id="resendLink">Resend</a></p>
+
+    <div id="msg" class="message"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import {
+      getAuth,
+      applyActionCode,
+    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC5bb6M-sEVu9JL7mkVLFvkv44k8JIG9Es",
+      authDomain: "brainalyze.firebaseapp.com",
+      projectId: "brainalyze",
+      storageBucket: "brainalyze.firebasestorage.app",
+      messagingSenderId: "930694068293",
+      appId: "1:930694068293:web:72fd905080497218010b2c",
+    };
+
+    const appfb = initializeApp(firebaseConfig);
+    const auth = getAuth(appfb);
+
+    const params = new URLSearchParams(window.location.search);
+    const mode = params.get("mode");
+    const oob = params.get("oobCode");
+
+    if (mode === "verifyEmail" && oob) {
+      document.getElementById("msg").textContent = "Verifying your email...";
+
+      applyActionCode(auth, oob)
+        .then(async () => {
+          document.getElementById("msg").textContent = "Email verified! Redirecting...";
+          try {
+            await auth.currentUser?.reload();
+          } catch (e) { }
+          setTimeout(() => {
+            window.location.href = "/register_login#login";
+          }, 1000);
+        })
+        .catch((err) => {
+          console.error(err);
+          document.getElementById("msg").textContent = "Invalid or expired verification link.";
+        });
+    }
+
+    document.getElementById("resendLink").addEventListener("click", async () => {
+      const email = sessionStorage.getItem("pending_email");
+      if (!email) {
+        document.getElementById("msg").textContent = "Cannot resend: email not found.";
+        return;
+      }
+
+      document.getElementById("msg").textContent = "Resending...";
+
+      try {
+        const response = await fetch("/send_verification_email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: email, name: "User" })
+        });
+
+        const data = await response.json();
+
+        if (data.status === "ok") {
+          document.getElementById("msg").textContent = "Verification email sent again!";
+        } else {
+          document.getElementById("msg").textContent = "Failed to resend email.";
+        }
+
+      } catch (e) {
+        document.getElementById("msg").textContent = "Server error.";
+      }
+    });
+  </script>
+
+</body>
+
+</html>

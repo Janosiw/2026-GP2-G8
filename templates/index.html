@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Brainalyze | HomePage</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+</head>
+<body>
+
+<header id="header">
+    <div class="logo">
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Logo">
+        <span>Brainalyze</span>
+    </div>
+
+    <nav id="nav">
+        <ul>
+            <li class="separator"></li>
+            <a class="link link-black signin-btn" id="signin-btn" href="{{ url_for('register_login') }}#login">Log in</a>
+            <li><a class="button primary small signup-btn" href="{{ url_for('register_login') }}">Sign up</a></li>
+        </ul>
+    </nav>
+</header>
+
+<div class="box" style="background:#f7f7f8 url('{{ url_for('static', filename='images/bra2.png') }}') no-repeat center/60%;"></div>
+
+<div class="slogan">
+    <span class="left">Your He<span class="highlight">alth</span></span><br>
+    <span class="right"><span class="highlight">Our</span> Passion</span>
+</div>
+
+<div class="specialty-section">
+    <h2 class="specialty-title">Our Services</h2>
+    <div class="specialty-cards">
+        <div class="specialty-card">
+            <img src="{{ url_for('static', filename='images/ri.jpg') }}" alt="MRI Scan Analysis" class="specialty-image">
+            <h3 class="specialty-name">MRI Scan Analysis</h3>
+        </div>
+        <div class="specialty-card">
+            <img src="{{ url_for('static', filename='images/gr.jpg') }}" alt="Visualization Insights" class="specialty-image">
+            <h3 class="specialty-name">Visualization Insights</h3>
+        </div>
+        <div class="specialty-card">
+            <img src="{{ url_for('static', filename='images/re.jpg') }}" alt="AI Report Generation" class="specialty-image">
+            <h3 class="specialty-name">AI Report Generation</h3>
+        </div>
+    </div>
+</div>
+
+<div class="us-section">
+    <div class="lineus">
+        <span class="line"></span>
+        <h2>About us</h2>
+        <span class="line"></span>
+    </div>
+    <p>
+        At <span class="highlight2">Brainalyze</span>, we use AI to improve medical imaging.
+        <br>We help radiologists analyze MRI scans, create reports,
+        <br>and get useful insights in one place.
+        <br>We want to make diagnostics faster, smarter, and more accurate.
+        <br>We connect technology with healthcare to help patients.
+    </p>
+</div>
+
+<div class="offer-container top-left">
+    <img src="{{ url_for('static', filename='images/22.jpg') }}" alt="Offer" class="offer-image">
+    <div class="offer-text">
+        <h2 class="offer-title">Special Offer for Radiologists!</h2>
+        <p class="offer-description">
+            Get access to AI-powered MRI analysis and automated report generation.
+            <br>Faster and more accurate diagnostics with Brainalyze.
+            <br>Limited-time offer.
+            <br>Join now.
+        </p>
+    </div>
+</div>
+
+<div class="offer-container bottom-right">
+    <div class="offer-text">
+        <h2 class="offer-title">Exclusive Offer for Medical Institutions!</h2>
+        <p class="offer-description">
+            Upgrade your workflow with Brainalyze AI.
+            <br>The platform analyzes MRI scans and creates reports in seconds.
+            <br>Limited-time offer.
+            <br>Improve your imaging process today.
+        </p>
+    </div>
+    <img src="{{ url_for('static', filename='images/33.jpg') }}" alt="Offer" class="offer-image">
+</div>
+
+<footer class="footer-medical">
+    <div class="fm-wrapper">
+        <div class="fm-left">
+            <img src="/static/images/logo.png" class="fm-logo" alt="Brainalyze">
+            <span class="fm-copy">© 2025 Brainalyze</span>
+        </div>
+
+        <div class="fm-center">
+            <span class="fm-title">FOLLOW US</span>
+            <div class="fm-icons">
+                <a style="text-decoration: none; color: black;" href="https://x.com/brainalyze_co">
+                    <img src="/static/images/twitter.png" alt=""><br> @brainalyze_co
+                </a>
+            </div>
+        </div>
+
+        <div class="fm-right">
+            <span class="fm-title">CONTACT</span>
+            <p class="fm-contact">+966530782404</p>
+            <p class="fm-contact">443200466@student.ksu.edu.sa</p>
+        </div>
+    </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Brainalyze | Scan Details</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js" charset="utf-8"></script>
+ <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --brand: #4f67d3;
+      --ink: #0f1221;
+      --muted: #6b7280;
+      --border: #dbe1f4;
+      --bg1: #f7faff;
+      --glass-bg: rgba(255, 255, 255, 0.55);
+      --glass-brd: rgba(255, 255, 255, 0.35);
+      --radius: 16px;
+    }
+
+    body {
+      visibility: hidden;
+    }
+
+    body {
+      margin: 0;
+      font-family: 'Poppins', 'Cairo', 'Arial', sans-serif;
+      background: #f7faff;
+      display: flex;
+      flex-direction: row;
+      min-height: 100vh;
+      font-size: 14px ;
+      font-weight: 500 !important;
+    }
+
+    .breadcrumb {
+      color: #8a93b2;
+      margin: 10px 0 22px;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .breadcrumb a {
+      color: #8a93b2;
+      text-decoration: none;
+    }
+
+    .breadcrumb span.sep {
+      opacity: 0.6;
+    }
+
+    .main {
+      padding: 28px;
+      margin-top: 3%;
+      transition: margin-left 0.35s ease;
+    }
+
+    @keyframes fadeSlide {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .res-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .section-label {
+      color: #1f2937;
+      margin-bottom: 10px;
+    }
+
+    .tumor-box {
+      background: #fff6f6;
+      border: 1px solid #ffe0e0;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 22px;
+    }
+
+    .tumor-box .title {
+      color: #991b1b;
+      font-size: 17px;
+      margin-bottom: 10px;
+    }
+
+    .conf-header {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+
+    .conf-rail {
+      width: 100%;
+      height: 9px;
+      background: #fde2e2;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .conf-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #4f67d3, #7285ff);
+      transition: .4s ease;
+    }
+
+    .localize-row {
+      margin-top: 15px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .btn-dark {
+      width: 200px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #1d2848, #0f1221);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: .25s ease;
+    }
+
+    .btn-dark:hover {
+      background: #2b386b;
+      transform: translateY(-1px);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 9999;
+    }
+
+    .modal-content {
+      margin: auto;
+      display: block;
+      max-width: 80%;
+      max-height: 80%;
+      border-radius: 14px;
+    }
+
+    .close {
+      color: white;
+      position: absolute;
+      top: 25px;
+      right: 40px;
+      font-size: 32px;
+      cursor: pointer;
+    }
+
+    .close:hover {
+      color: #f97316;
+    }
+
+    .results {
+      padding: 24px 24px;
+      margin-bottom: 22px;
+      animation: fadeSlide .45s ease;
+    }
+
+    .res-header h3 {
+      margin: 0;
+      color: #1f2240;
+      font-size: 18px;
+    }
+
+    .chip {
+      background: #e8ffe9;
+      color: #1c7a3c;
+      padding: 6px 12px;
+      border-radius: 20px;
+    }
+
+    .section-label {
+      letter-spacing: .08em;
+      color: #9ca3af;
+      margin-bottom: 6px;
+    }
+
+    .localize-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+
+    #localizeBtn {
+      width: fit-content;
+      min-width: 190px;
+    }
+
+    .mri-box img {
+      margin-left: 0% !important;
+    }
+
+    .mri-box h4 {
+      margin-left: 0% !important;
+    }
+
+    .seg-overlay-box {
+      position: relative;
+      width: 80%;
+      max-width: 360px;
+      flex-direction: column;
+      margin: auto;
+      margin-left: 35% !important;
+    }
+
+    .seg-card p {
+      width: 100%;
+    }
+
+    .tumor-conf-label {
+      text-align: right;
+      color: #111827;
+      margin-top: 6px;
+    }
+
+    @media (max-width: 768px) {
+      html, body {
+        overflow-x: hidden !important;
+        width: 100% !important;
+      }
+
+      .sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: -260px !important;
+        width: 190px !important;
+        height: 100vh !important;
+        background: #ffffff !important;
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        transition: left 0.35s ease !important;
+        z-index: 2000 !important;
+      }
+
+      .sidebar.active {
+        left: 0 !important;
+      }
+
+      #docheader {
+        left: 0 !important;
+        width: 94% !important;
+        position: fixed !important;
+        top: 0 !important;
+        z-index: 1500 !important;
+        background: #f7faff !important;
+      }
+
+      .main {
+        margin-top: 90px !important;
+        padding: 16px !important;
+      }
+
+      .mri-grid {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 18px !important;
+      }
+
+      .mri-box img {
+        width: 70% !important;
+        margin: auto !important;
+        display: block !important;
+      }
+
+      .footer-medical {
+        margin-left: 0 !important;
+        width: 100% !important;
+      }
+
+      .fm-wrapper {
+        display: flex;
+        flex-direction: row !important;
+        justify-content: space-between;
+        align-items: center;
+        text-align: center !important;
+        gap: 10px !important;
+        flex-wrap: nowrap;
+      }
+
+      .fm-left,
+      .fm-center,
+      .fm-right {
+        flex: 0 0 auto;
+      }
+
+      .seg-overlay-box {
+        width: 70% !important;
+        max-width: 320px !important;
+        margin: 0 auto !important;
+      }
+
+      .seg-overlay-box img {
+        width: 93% !important;
+      }
+
+      .btn-dark {
+        width: 100% !important;
+        font-size: 13px !important;
+        height: 44px !important;
+      }
+
+      #localizeBtn {
+        min-width: 100% !important;
+      }
+
+      .fm-wrapper {
+        flex-direction: row !important;
+        text-align: center !important;
+        gap: 10px !important;
+      }
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.35);
+      backdrop-filter: blur(2px);
+      z-index: 1666;
+    }
+
+    .sidebar-overlay.active {
+      display: block;
+    }
+
+    .view-report-btn-main {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 22px;
+      height: 48px;
+      background: #506DCA;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: .25s ease;
+    }
+    .view-report-btn-main:hover { background: #3a55b0; }
+    .rvm-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(15,18,33,0.35); backdrop-filter: blur(2px);
+      z-index: 3000; align-items: center; justify-content: center; padding: 40px;
+    }
+    .rvm-overlay.open { display: flex; }
+    .rvm-box {
+      background: #fff; border: 1px solid #e6eaf7;
+      box-shadow: 0 18px 45px rgba(0,0,0,0.18);
+      border-radius: 16px; width: 780px; max-width: 92vw;
+      max-height: 75vh; overflow-y: auto; padding: 28px 30px;
+      position: relative;
+    }
+    .rvm-close {
+      position: absolute; top: 18px; right: 20px;
+      background: none; border: none; font-size: 22px;
+      cursor: pointer; color: #6b7280; font-weight: 500; line-height: 1;
+    }
+    .rvm-close:hover { color: #111827; }
+    .rvm-field-label {
+      font-size: 10px; font-weight: 600; color: #6b7280;
+      text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+    }
+    .rvm-input {
+      width: 100%; border: 1px solid #dbe1f4; border-radius: 8px;
+      padding: 6px 10px; font-size: 13px; font-family: inherit;
+      color: #1a1a2e; background: #fff; outline: none; box-sizing: border-box;
+    }
+    .rvm-section-lbl {
+      font-size: 10px; font-weight: 700; color: #506DCA;
+      text-transform: uppercase; letter-spacing: 1px;
+      margin: 14px 0 6px; padding-bottom: 4px; border-bottom: 1px solid #e5e7eb;
+    }
+    .rvm-bullets {
+      background: #fff; border: 1px solid #dbe1f4; border-radius: 14px;
+      padding: 14px 18px; list-style: none; margin: 0 0 4px;
+    }
+    .rvm-bullets li {
+      font-size: 14px; color: #111827; line-height: 1.7;
+      display: flex; gap: 8px;
+    }
+    .rvm-bullets li::before { content: "\2022"; color: #506DCA; font-weight: 700; flex-shrink: 0; }
+    #sv_plot3dDiv .modebar-container,
+    #sv_plot3dDiv .modebar { display: none !important; }
+  </style>
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar">
+  <div class="brand" onclick="window.location.href='{{ url_for('home') }}'">
+    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Brainalyze">
+    <span>Brainalyze</span>
+  </div>
+  <nav class="nav">
+    <a href="{{ url_for('home') }}"><img src="{{ url_for('static', filename='images/home-icon.jpg') }}" alt=""><span>Home</span></a>
+    <a class="active" href="{{ url_for('patients') }}"><img src="{{ url_for('static', filename='images/patient-icon.png') }}" alt=""><span>Patients</span></a>
+    <a href="{{ url_for('dashboard') }}"><img src="{{ url_for('static', filename='images/home-icon.jpg') }}" alt=""><span>Dashboard</span></a>
+    <a href="{{ url_for('reports') }}"><img src="{{ url_for('static', filename='images/patient-icon.png') }}" alt=""><span>Reports</span></a>
+    <a href="{{ url_for('profile') }}"><img src="{{ url_for('static', filename='images/user-icon.jpg') }}" alt=""><span>Profile</span></a>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="#" id="logoutBtn" class="logout"><span>Logout</span></a>
+  </div>
+</aside>
+
+  <div class="popup-overlay" id="logoutPopup">
+    <div class="popup-box">
+      <h2>Confirm Logout</h2>
+      <p>Are you sure you want to log out?</p>
+      <div class="popup-buttons">
+        <button class="popup-cancel" id="cancelLogout">Cancel</button>
+        <button class="popup-confirm" id="confirmLogout">Yes, Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-wrapper">
+    <div id="docheader">
+      <div style="display:flex; align-items:center; gap:15px;">
+        <button class="toggle-btn" id="toggleBtn">
+          <img src="{{ url_for('static', filename='images/sidebar_icon.png') }}" alt="menu" width="32" height="32"
+            style="object-fit: contain;">
+        </button>
+        <span id="pageTitle">Scan {{ scan_number }} Details</span>
+      </div>
+
+      <div class="doctor-info">
+        <div class="doctor-details">
+          <h2 style="font-weight: bold !important;">Dr. {{ doctor.name }}</h2>
+          <p>{{ doctor.email }}</p>
+        </div>
+        <img src="{{ doctor.ProfilePicture }}" class="profile-pic">
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="breadcrumb">
+        <a href="{{ url_for('patients') }}">Patients</a>
+        <span class="sep">›</span>
+
+        {% if patient %}
+          {% if is_owner %}
+            <a href="{{ url_for('patient_profile', patient_id=patient.patient_id) }}">{{ patient.name }}</a>
+          {% else %}
+            <a href="{{ url_for('patients') }}?tab=shared">Shared Cases</a>
+          {% endif %}
+          <span class="sep">›</span>
+        {% endif %}
+
+        {% if case_id %}
+        <a href="{{ url_for('view_case', patient_id=patient.patient_id, case_id=case_id) }}">
+          Case {{ case_number }}
+        </a>
+        <span class="sep">›</span>
+        {% endif %}
+
+        <span>Scan {{ scan_number }} Details</span>
+      </div>
+
+      <section class="glass-card results">
+        <div class="res-header">
+          <h3>Analysis Results</h3>
+          <span class="chip">Completed</span>
+        </div>
+
+        <div class="section-label">Tumor Classification</div>
+        <div class="tumor-box">
+          <div class="title" id="tumorType">—</div>
+          <div class="conf-header">
+            <span id="confText"><span id="confScore">0.00%</span> confidence</span>
+          </div>
+          <div class="conf-rail">
+            <div class="conf-fill" id="confFill"></div>
+          </div>
+        </div>
+
+        <div id="mriVizSection">
+        <div class="section-label">MRI Visualization</div>
+        <div class="mri-grid">
+          <div class="mri-box">
+            <h4>Original MRI</h4>
+            <img id="origImg" class="zoomable" src="">
+          </div>
+
+          <div class="mri-box">
+            <h4>Grad-CAM</h4>
+            <img id="gradImg" class="zoomable" src="">
+          </div>
+        </div>
+        </div><!-- end mriVizSection -->
+
+        <div class="localize-row">
+          <button class="btn-dark" id="localizeBtn">
+            <span id="locText">Reveal Tumor Area</span>
+            <span id="locSpinner" style="display:none;"><i class="fa-solid fa-spinner fa-spin"></i></span>
+            <span id="locPercent" style="display:none;">0%</span>
+          </button>
+        </div>
+      </section>
+
+      <section class="glass-card seg-card" id="segCard">
+        <div class="seg-card-title">Tumor Segmentation</div>
+
+        <div class="seg-overlay-box">
+          <img id="origOverlay" class="overlay-base zoomable" src="">
+          <img id="maskOverlay" class="overlay-mask zoomable" src="">
+        </div>
+
+        <p style="text-align:center; color:#6b7280; font-size:12px !important; margin-top:8px;">
+          Highlighted tumor region (AI-based)
+        </p>
+      </section>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         3D SEGMENTATION VIEWER — shown only when scan is 3D
+    ════════════════════════════════════════════════════════════════════════ -->
+    <section class="glass-card" id="card3d" style="display:none; padding:24px; margin:0 28px 22px 28px; animation:fadeSlide .45s ease;">
+
+      <!-- Header -->
+      <div class="res-header" style="margin-bottom:16px;">
+        <h3 style="margin:0; font-size:17px; font-weight:700; color:#1a1a2e;">Segmentation Results</h3>
+        <span class="chip" style="background:#dbeafe; color:#1d4ed8; border-color:#bfdbfe;">
+          <i class="fa-solid fa-cube" style="margin-right:5px;"></i>3D Segmentation
+        </span>
+      </div>
+
+      <!-- Colour legend + volume metrics -->
+      <div id="badge3d" style="margin-bottom:18px;"></div>
+
+      <!-- Tabs -->
+      <div style="display:flex; gap:0; border-radius:10px; overflow:hidden; border:1px solid #e2e8f0; margin-bottom:14px; width:fit-content;">
+        <button id="sv_tab3d" onclick="svSwitchTab('3d')"
+          style="padding:8px 22px; font-size:13px; font-weight:600; border:none; cursor:pointer; background:#2563eb; color:#fff;">
+          <i class="fa-solid fa-cube" style="margin-right:6px;"></i>3D View
+        </button>
+        <button id="sv_tabSlices" onclick="svSwitchTab('slices')"
+          style="padding:8px 22px; font-size:13px; font-weight:600; border:none; cursor:pointer; background:#f1f5f9; color:#475569;">
+          <i class="fa-solid fa-layer-group" style="margin-right:6px;"></i>Slices
+        </button>
+      </div>
+
+      <!-- Brain opacity slider (3D tab only) -->
+      <div id="sv_opRow" style="display:flex; align-items:center; gap:12px; margin-bottom:10px; background:#eff6ff; border:1px solid #dbeafe; border-radius:10px; padding:10px 16px;">
+        <i class="fa-solid fa-brain" style="color:#60a5fa; font-size:16px;"></i>
+        <span style="font-size:12px; color:#1e40af; font-weight:600; white-space:nowrap;">Brain opacity</span>
+        <input type="range" id="sv_opSlider" min="0" max="35" value="10"
+          style="flex:1; accent-color:#2563eb; cursor:pointer;"
+          oninput="svSetBrainOpacity(this.value)">
+        <span id="sv_opLabel" style="font-size:12px; color:#374151; width:32px; text-align:right;">10%</span>
+      </div>
+
+      <!-- Plotly 3D canvas -->
+      <div id="sv_plot3dContainer" style="position:relative; border-radius:16px; overflow:hidden; border:1px solid #1e293b; background:rgb(8,12,28); margin-bottom:14px;">
+        <style>#sv_plot3dDiv .modebar-container,.modebar{display:none!important;}</style>
+        <div id="sv_plot3dDiv" style="width:100%; height:480px;"></div>
+
+        <!-- Rotation arrow buttons -->
+        <div style="position:absolute; inset:0; pointer-events:none; display:flex; align-items:center; justify-content:center;">
+          <button onclick="svRotate3D('up')" title="Rotate up"
+            style="pointer-events:all; position:absolute; top:10px; left:50%; transform:translateX(-50%);
+                   background:rgba(255,255,255,0.13); border:1px solid rgba(255,255,255,0.22); color:#e2e8f0;
+                   width:38px; height:38px; border-radius:50%; font-size:16px; cursor:pointer;
+                   display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);"
+            onmouseenter="this.style.background='rgba(124,58,237,0.55)'"
+            onmouseleave="this.style.background='rgba(255,255,255,0.13)'">&#9650;</button>
+          <button onclick="svRotate3D('down')" title="Rotate down"
+            style="pointer-events:all; position:absolute; bottom:10px; left:50%; transform:translateX(-50%);
+                   background:rgba(255,255,255,0.13); border:1px solid rgba(255,255,255,0.22); color:#e2e8f0;
+                   width:38px; height:38px; border-radius:50%; font-size:16px; cursor:pointer;
+                   display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);"
+            onmouseenter="this.style.background='rgba(124,58,237,0.55)'"
+            onmouseleave="this.style.background='rgba(255,255,255,0.13)'">&#9660;</button>
+          <button onclick="svRotate3D('left')" title="Rotate left"
+            style="pointer-events:all; position:absolute; left:10px; top:50%; transform:translateY(-50%);
+                   background:rgba(255,255,255,0.13); border:1px solid rgba(255,255,255,0.22); color:#e2e8f0;
+                   width:38px; height:38px; border-radius:50%; font-size:16px; cursor:pointer;
+                   display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);"
+            onmouseenter="this.style.background='rgba(124,58,237,0.55)'"
+            onmouseleave="this.style.background='rgba(255,255,255,0.13)'">&#9664;</button>
+          <button onclick="svRotate3D('right')" title="Rotate right"
+            style="pointer-events:all; position:absolute; right:10px; top:50%; transform:translateY(-50%);
+                   background:rgba(255,255,255,0.13); border:1px solid rgba(255,255,255,0.22); color:#e2e8f0;
+                   width:38px; height:38px; border-radius:50%; font-size:16px; cursor:pointer;
+                   display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px);"
+            onmouseenter="this.style.background='rgba(124,58,237,0.55)'"
+            onmouseleave="this.style.background='rgba(255,255,255,0.13)'">&#9654;</button>
+          <button onclick="svResetCamera3D()" title="Reset view"
+            style="pointer-events:all; position:absolute; right:10px; bottom:10px;
+                   background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.20); color:#94a3b8;
+                   padding:4px 10px; border-radius:8px; font-size:11px; cursor:pointer;
+                   backdrop-filter:blur(4px); font-weight:600;"
+            onmouseenter="this.style.background='rgba(124,58,237,0.45)'; this.style.color='#fff'"
+            onmouseleave="this.style.background='rgba(255,255,255,0.10)'; this.style.color='#94a3b8'">
+            &#8635; Reset
+          </button>
+        </div>
+
+        <!-- Loading spinner shown while fetching JSON -->
+        <div id="sv_plot3dLoading" style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:rgb(8,12,28); color:#94a3b8; gap:10px; font-size:13px;">
+          <i class="fa-solid fa-spinner fa-spin" style="font-size:28px; color:#2563eb;"></i>
+          Loading 3D volume…
+        </div>
+      </div>
+
+      <!-- MPR viewer (Slices tab) — matches scans.html style -->
+      <div id="sv_slicesSection" style="display:none;">
+
+        <!-- Legend row -->
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:10px; flex-wrap:wrap;">
+          <span style="font-size:12px; font-weight:700; color:#60a5fa;">MPR Viewer</span>
+          <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:#94a3b8;">
+            <span style="width:12px;height:12px;border-radius:3px;background:rgb(220,50,50);display:inline-block;"></span>
+            Tumour
+          </span>
+        </div>
+
+        <!-- Three MPR panels -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px;">
+
+          <!-- Axial -->
+          <div style="background:#050810; border-radius:10px; overflow:hidden; border:1px solid #1e293b;">
+            <div style="background:#7c1d1d; padding:6px 12px; font-size:11px; font-weight:700; color:#fca5a5; letter-spacing:.06em; display:flex; justify-content:space-between; align-items:center;">
+              <span>AXIAL</span>
+              <span id="sv-mpr-lbl-axial" style="font-weight:400; opacity:.8; font-size:10px;">z = –</span>
+            </div>
+            <div id="sv-mpr-wrap-axial" style="position:relative; background:#080808; line-height:0; min-height:200px; display:flex; align-items:center; justify-content:center;">
+              <span id="sv-mpr-spin-axial" style="color:#475569; font-size:11px; position:absolute;">Loading…</span>
+              <img id="sv-mpr-img-axial" src="" alt="axial"
+                   style="width:100%; display:block; object-fit:contain; opacity:0; transition:opacity .3s;"
+                   onload="this.style.opacity=1; document.getElementById('sv-mpr-spin-axial').style.display='none';">
+              <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(252,211,77,.35);pointer-events:none;"></div>
+              <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(252,211,77,.35);pointer-events:none;"></div>
+            </div>
+            <div style="padding:7px 10px; display:flex; align-items:center; gap:8px; background:#0a0a1a;">
+              <input type="range" id="sv-mpr-sl-axial" min="0" max="154" value="77"
+                style="flex:1; accent-color:#f87171; cursor:pointer; height:4px;"
+                oninput="svMprFetch('axial', +this.value)">
+              <span style="font-size:10px; color:#64748b; min-width:28px; text-align:right;" id="sv-mpr-num-axial">–</span>
+            </div>
+          </div>
+
+          <!-- Coronal -->
+          <div style="background:#050810; border-radius:10px; overflow:hidden; border:1px solid #1e293b;">
+            <div style="background:#14532d; padding:6px 12px; font-size:11px; font-weight:700; color:#86efac; letter-spacing:.06em; display:flex; justify-content:space-between; align-items:center;">
+              <span>CORONAL</span>
+              <span id="sv-mpr-lbl-coronal" style="font-weight:400; opacity:.8; font-size:10px;">y = –</span>
+            </div>
+            <div id="sv-mpr-wrap-coronal" style="position:relative; background:#080808; line-height:0; min-height:200px; display:flex; align-items:center; justify-content:center;">
+              <span id="sv-mpr-spin-coronal" style="color:#475569; font-size:11px; position:absolute;">Loading…</span>
+              <img id="sv-mpr-img-coronal" src="" alt="coronal"
+                   style="width:100%; display:block; object-fit:contain; opacity:0; transition:opacity .3s;"
+                   onload="this.style.opacity=1; document.getElementById('sv-mpr-spin-coronal').style.display='none';">
+              <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(252,211,77,.35);pointer-events:none;"></div>
+              <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(252,211,77,.35);pointer-events:none;"></div>
+            </div>
+            <div style="padding:7px 10px; display:flex; align-items:center; gap:8px; background:#0a0a1a;">
+              <input type="range" id="sv-mpr-sl-coronal" min="0" max="239" value="120"
+                style="flex:1; accent-color:#4ade80; cursor:pointer; height:4px;"
+                oninput="svMprFetch('coronal', +this.value)">
+              <span style="font-size:10px; color:#64748b; min-width:28px; text-align:right;" id="sv-mpr-num-coronal">–</span>
+            </div>
+          </div>
+
+          <!-- Sagittal -->
+          <div style="background:#050810; border-radius:10px; overflow:hidden; border:1px solid #1e293b;">
+            <div style="background:#1e3a5f; padding:6px 12px; font-size:11px; font-weight:700; color:#93c5fd; letter-spacing:.06em; display:flex; justify-content:space-between; align-items:center;">
+              <span>SAGITTAL</span>
+              <span id="sv-mpr-lbl-sagittal" style="font-weight:400; opacity:.8; font-size:10px;">x = –</span>
+            </div>
+            <div id="sv-mpr-wrap-sagittal" style="position:relative; background:#080808; line-height:0; min-height:200px; display:flex; align-items:center; justify-content:center;">
+              <span id="sv-mpr-spin-sagittal" style="color:#475569; font-size:11px; position:absolute;">Loading…</span>
+              <img id="sv-mpr-img-sagittal" src="" alt="sagittal"
+                   style="width:100%; display:block; object-fit:contain; opacity:0; transition:opacity .3s;"
+                   onload="this.style.opacity=1; document.getElementById('sv-mpr-spin-sagittal').style.display='none';">
+              <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:rgba(252,211,77,.35);pointer-events:none;"></div>
+              <div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:rgba(252,211,77,.35);pointer-events:none;"></div>
+            </div>
+            <div style="padding:7px 10px; display:flex; align-items:center; gap:8px; background:#0a0a1a;">
+              <input type="range" id="sv-mpr-sl-sagittal" min="0" max="239" value="120"
+                style="flex:1; accent-color:#60a5fa; cursor:pointer; height:4px;"
+                oninput="svMprFetch('sagittal', +this.value)">
+              <span style="font-size:10px; color:#64748b; min-width:28px; text-align:right;" id="sv-mpr-num-sagittal">–</span>
+            </div>
+          </div>
+
+        </div><!-- /grid -->
+      </div><!-- /sv_slicesSection -->
+    </section>
+
+    <div id="viewReportRow" style="display:none; padding: 0 28px 24px 28px;">
+  <div style="background:#fff; border-radius:16px; border:1px solid #dbe1f4; padding:20px 24px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+    <!-- shown when report exists -->
+    <div id="reportAvailableBlock" style="display:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; width:100%;">
+      <div>
+        <div style="font-weight:700; font-size:16px; color:#1e2a47;">Radiology Report Available</div>
+        <div style="font-size:13px; color:#6a7393; margin-top:4px;">An AI-generated report has been linked to this scan.</div>
+      </div>
+      <button class="view-report-btn-main" id="viewReportBtn">
+        &#128196; View Report
+      </button>
+    </div>
+    <!-- shown when no report yet -->
+    <div id="generateReportBlock" style="display:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; width:100%;">
+      <div>
+        <div style="font-weight:700; font-size:16px; color:#1e2a47;">No Report Generated</div>
+        <div style="font-size:13px; color:#6a7393; margin-top:4px;">Generate an AI radiology report for this scan.</div>
+      </div>
+      <button class="view-report-btn-main" id="generateReportFromViewBtn" style="background:linear-gradient(135deg,#3B82F6,#2563eb);">
+        &#128196; Generate Report
+      </button>
+    </div>
+  </div>
+</div>
+<div class="page-back-wrap">
+  <a href="{{ url_for('view_case', patient_id=patient.patient_id, case_id=case_id) }}"
+     class="page-back-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M19 12H5"/>
+      <path d="M12 19l-7-7 7-7"/>
+    </svg>
+    Back
+  </a>
+</div>
+<footer class="footer-medical">
+      <div class="fm-wrapper">
+        <div class="fm-left">
+          <img src="/static/images/logo.png" class="fm-logo" alt="Brainalyze">
+          <span class="fm-copy">© 2025 Brainalyze</span>
+        </div>
+
+        <div class="fm-center">
+          <span class="fm-title">FOLLOW US</span>
+          <div class="fm-icons">
+            <a style="text-decoration: none; color: black;" href="https://x.com/brainalyze_co"><img src="/static/images/twitter.png" alt=""></br> @brainalyze_co</a>
+          </div>
+        </div>
+
+        <div class="fm-right">
+          <span class="fm-title">CONTACT</span>
+          <p class="fm-contact">+966530782404</p>
+          <p class="fm-contact">443200466@student.ksu.edu.sa</p>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <div id="imgModal" class="modal">
+    <span class="close">&times;</span>
+    <img id="modalImg" class="modal-content">
+  </div>
+
+  <script>
+    const toggleBtn = document.getElementById("toggleBtn");
+    const sidebar = document.querySelector(".sidebar");
+    const docheader = document.getElementById("docheader");
+    const main = document.querySelector(".main");
+    const overlay = document.getElementById("sidebarOverlay");
+
+    toggleBtn.addEventListener("click", () => {
+      if (window.innerWidth > 768) {
+        sidebar.classList.toggle("collapsed");
+      }
+      else {
+        sidebar.classList.toggle("active");
+        overlay.classList.toggle("active");
+      }
+    });
+
+    overlay.addEventListener("click", () => {
+      sidebar.classList.remove("active");
+      overlay.classList.remove("active");
+    });
+
+    function applyNoTumorUI() {
+      const tumorType = document.getElementById("tumorType");
+      tumorType.textContent = "No Tumor Detected";
+      tumorType.style.color = "#1d4ed8";
+
+      const tumorBox = document.querySelector(".tumor-box");
+      tumorBox.style.background = "#f0f7ff";
+      tumorBox.style.border = "1px solid #cfe3ff";
+      document.getElementById("origImg").style.display = "block";
+      document.getElementById("origImg").style.width = "100%";
+      document.getElementById("origImg").style.height = "30%";
+      document.getElementById("origImg").style.objectFit = "contain";
+      document.getElementById("gradImg").style.display = "none";
+      document.querySelectorAll(".mri-box")[1].style.display = "none";
+      document.getElementById("localizeBtn").style.display = "none";
+      document.getElementById("segCard").style.display = "none";
+    }
+
+    window.addEventListener("load", () => {
+      const url = new URL(window.location.href);
+
+      const scanId = url.searchParams.get("scan_id");
+      const scanNumber = url.searchParams.get("scan_number");
+      const caseId = url.searchParams.get("case_id");
+      const caseNumber = url.searchParams.get("case_number");
+
+      if (!scanId) return;
+
+      const scanNumber2 = new URLSearchParams(window.location.search).get("scan_number");
+      document.getElementById("pageTitle").textContent = `Scan ${scanNumber} Details`;
+
+      fetch(`/view_scan?scan_id=${scanId}&scan_number=${scanNumber}&case_id=${caseId}&case_number=${caseNumber}`, {
+        headers: {
+          "X-Requested-With": "XMLHttpRequest"
+        }
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d.status !== "success") return;
+          document.getElementById("tumorType").textContent = d.tumor_type;
+          document.getElementById("confScore").textContent = Number(d.confidence).toFixed(2) + "%";
+          document.getElementById("confFill").style.width = d.confidence + "%";
+
+          if (d.original) { document.getElementById("origImg").src = d.original; document.getElementById("origOverlay").src = d.original; }
+          if (d.gradcam)  document.getElementById("gradImg").src = d.gradcam;
+          if (d.mask)     document.getElementById("maskOverlay").src = d.mask;
+
+          if (d.tumor_type === "no_tumor") {
+            applyNoTumorUI();
+            document.body.style.visibility = "visible";
+            return;
+          }
+
+          // ── 3D scan handling ────────────────────────────────────────────────
+          if (d.is_3d) {
+            // Mark the Analysis Results header as 3D
+            const resHeader = document.querySelector('.results .res-header .chip');
+            if (resHeader) { resHeader.textContent = '3D'; resHeader.style.cssText += ';background:#dbeafe;color:#1d4ed8;border-color:#bfdbfe;'; }
+
+            // Replace the classification box with a simple scan-type badge
+            const sectionLabel = document.querySelector('.results .section-label');
+            if (sectionLabel) sectionLabel.style.display = "none";
+            const tumorBox = document.querySelector('.tumor-box');
+            if (tumorBox) {
+              tumorBox.style.background = "#f0f4ff";
+              tumorBox.style.border = "1px solid #c7d2fe";
+              tumorBox.innerHTML = `
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <i class="fa-solid fa-cube" style="color:#1d4ed8;font-size:18px;"></i>
+                  <div>
+                    <div style="font-weight:700;color:#1d4ed8;font-size:15px;">Glioma — 3D NIfTI</div>
+                    <div style="font-size:12px;color:#6b7280;margin-top:2px;">Segmentation-only pipeline · nnUNet model</div>
+                  </div>
+                </div>`;
+            }
+            document.getElementById("confText") && (document.getElementById("confText").style.display = "none");
+
+            // Hide 2D-only UI elements
+            document.getElementById("localizeBtn").style.display = "none";
+            document.getElementById("segCard").style.display = "none";
+            const mriVizSec = document.getElementById("mriVizSection");
+            if (mriVizSec) mriVizSec.style.display = "none";
+
+            // Populate + show the 3D viewer card
+            render3dCard(d);
+          } else {
+            if (d.mask && d.mask !== "" && d.mask !== null) {
+              document.getElementById("localizeBtn").style.display = "none";
+              document.getElementById("segCard").style.display = "block";
+            }
+          }
+
+          const viewReportRow        = document.getElementById("viewReportRow");
+          const reportAvailableBlock = document.getElementById("reportAvailableBlock");
+          const generateReportBlock  = document.getElementById("generateReportBlock");
+          const tumorType = (d.tumor_type || "").toLowerCase().replace(/\s/g,"");
+          const hasTumor  = tumorType !== "notumor" && tumorType !== "" && tumorType !== "none";
+
+          if (d.report_id) {
+            // Report already saved — show "View Report"
+            viewReportRow.style.display = "block";
+            reportAvailableBlock.style.display = "flex";
+            generateReportBlock.style.display  = "none";
+            const reportBtn = document.getElementById("viewReportBtn");
+            reportBtn.onclick = function() {
+              openReportViewModal({
+                report_id:         d.report_id || "",
+                doctor_name:       "Dr. {{ doctor.name }}",
+                doctor_email:      "{{ doctor.email }}",
+                patient_name:      d.patient_name   || "",
+                patient_phone:     d.patient_phone  || "",
+                patient_age:       d.patient_age    || "",
+                patient_gender:    d.patient_gender || "",
+                report_findings:   d.report_findings   || [],
+                report_impression: d.report_impression || [],
+                report_mask:       d.report_mask  || "",
+                report_mri:        d.report_mri   || d.original || "",
+                report_date:       d.report_date  || "",
+                is_3d:             d.is_3d         || false,
+                volume_metrics:    d.volume_metrics || {},
+                slices_3d:         d.slices_3d     || [],
+                scan_id:           new URLSearchParams(window.location.search).get("scan_id") || "",
+              });
+            };
+          } else if (hasTumor) {
+            // No report yet, but scan has a tumor — show "Generate Report"
+            viewReportRow.style.display = "block";
+            reportAvailableBlock.style.display = "none";
+            generateReportBlock.style.display  = "flex";
+
+            const genBtn = document.getElementById("generateReportFromViewBtn");
+            genBtn.addEventListener("click", async function() {
+              genBtn.disabled  = true;
+              genBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="margin-right:8px;"></i>Generating...';
+              try {
+                const scanId = new URLSearchParams(window.location.search).get("scan_id") || "";
+                const fd = new FormData();
+                fd.append("scan_id", scanId);
+                const r  = await fetch("/save_report_for_scan", { method: "POST", body: fd });
+                const rd = await r.json();
+                if (rd.status === "success") {
+                  // Switch to "View Report"
+                  generateReportBlock.style.display  = "none";
+                  reportAvailableBlock.style.display = "flex";
+                  const viewBtn = document.getElementById("viewReportBtn");
+                  viewBtn.onclick = function() { location.reload(); };
+                  viewBtn.innerHTML = "&#128196; View Report";
+                } else {
+                  genBtn.disabled  = false;
+                  genBtn.innerHTML = "&#128196; Generate Report";
+                }
+              } catch(e) {
+                genBtn.disabled  = false;
+                genBtn.innerHTML = "&#128196; Generate Report";
+              }
+            });
+          }
+
+          document.body.style.visibility = "visible";
+        })
+        .catch(err => {
+          console.error("Error loading scan:", err);
+        });
+
+    });
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 3D VIEWER FUNCTIONS
+    // ═══════════════════════════════════════════════════════════════════════
+
+    function render3dCard(d) {
+      const card3d   = document.getElementById('card3d');
+      const badge3d  = document.getElementById('badge3d');
+
+      // ── colour legend ────────────────────────────────────────────────────
+      badge3d.innerHTML = `
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:13px;color:#374151;">
+          <i class="fa-solid fa-cube" style="color:#1d4ed8;"></i>
+          <strong>3D Glioma Segmentation</strong>
+          <span style="color:#9ca3af;">— multi-modality volume analysis</span>
+        </div>
+        `;
+
+      // ── show the card ────────────────────────────────────────────────────
+      card3d.style.display = 'block';
+
+      // ── init MPR viewer ───────────────────────────────────────────────────
+      const mprScanId = new URLSearchParams(window.location.search).get("scan_id");
+      if (mprScanId) svMprInit(mprScanId);
+
+      // ── fetch & render Plotly if available ───────────────────────────────
+      if (d.has_plot3d) {
+        const scanId = new URLSearchParams(window.location.search).get("scan_id");
+        fetch(`/load_plot3d?scan_id=${scanId}`)
+          .then(r => r.json())
+          .then(figSpec => {
+            document.getElementById('sv_plot3dLoading').style.display = 'none';
+            Plotly.react('sv_plot3dDiv', figSpec.data, figSpec.layout, {
+              responsive: true,
+              displayModeBar: false,
+              displaylogo: false
+            });
+          })
+          .catch(e => {
+            console.warn('Plotly load failed', e);
+            document.getElementById('sv_plot3dLoading').innerHTML =
+              '<i class="fa-solid fa-triangle-exclamation" style="color:#f59e0b;font-size:24px;"></i><span style="margin-top:6px;">3D view unavailable — showing slices</span>';
+            svSwitchTab('slices');
+          });
+      } else {
+        // No 3D figure → switch to slices tab and hide 3D tab
+        document.getElementById('sv_tab3d').style.display = 'none';
+        document.getElementById('sv_opRow').style.display = 'none';
+        document.getElementById('sv_plot3dContainer').style.display = 'none';
+        svSwitchTab('slices');
+      }
+    }
+
+    async function svRegenOverlays() {
+      const scanId  = new URLSearchParams(window.location.search).get("scan_id");
+      if (!scanId) return;
+
+      try {
+        const res  = await fetch('/regen_3d_overlays', {
+          method:  'POST',
+          headers: {'Content-Type': 'application/json'},
+          body:    JSON.stringify({ scan_id: scanId })
+        });
+        const data = await res.json();
+
+        if (data.status === 'success') {
+          window._svMprReady = false;
+          svMprInit(scanId);
+        }
+      } catch(e) {
+        console.warn('[svRegenOverlays]', e);
+      }
+    }
+
+    function svSwitchTab(tab) {
+      const is3d = tab === '3d';
+      const tab3dBtn   = document.getElementById('sv_tab3d');
+      const tabSlBtn   = document.getElementById('sv_tabSlices');
+      const plotCont   = document.getElementById('sv_plot3dContainer');
+      const opRow      = document.getElementById('sv_opRow');
+      const slicesSec  = document.getElementById('sv_slicesSection');
+      if (tab3dBtn) Object.assign(tab3dBtn.style, { background: is3d ? '#2563eb' : '#f1f5f9', color: is3d ? '#fff' : '#475569' });
+      if (tabSlBtn) Object.assign(tabSlBtn.style, { background: is3d ? '#f1f5f9' : '#2563eb', color: is3d ? '#475569' : '#fff' });
+      if (plotCont)  plotCont.style.display  = is3d ? 'block' : 'none';
+      if (opRow)     opRow.style.display     = is3d ? 'flex'  : 'none';
+      if (slicesSec) slicesSec.style.display = is3d ? 'none'  : 'block';
+      // Init MPR on first switch to slices tab
+      if (!is3d && !window._svMprReady && window._svMprScanId) {
+        svMprInit(window._svMprScanId);
+      }
+    }
+
+    // ─── MPR viewer for scan_view ─────────────────────────────────────────
+    window._svMprTotals   = { axial: 155, coronal: 240, sagittal: 240 };
+    window._svMprInFlight = { axial: null, coronal: null, sagittal: null };
+    window._svMprScanId   = null;
+    window._svMprReady    = false;
+
+    function svMprInit(scanId) {
+      window._svMprScanId = scanId;
+      window._svMprReady  = false;
+
+      // Fast path: load cached preview slices from Firestore
+      const _mprDefaults = { axial: 77, coronal: 120, sagittal: 120 };
+      fetch(`/api/mpr_preview/${scanId}`)
+        .then(r => r.json())
+        .then(pv => {
+          if (pv.preview) {
+            ['axial', 'coronal', 'sagittal'].forEach(plane => {
+              const b64 = pv.preview[plane];
+              if (!b64) return;
+              const mid = _mprDefaults[plane];
+              _svMprUpdate(plane, { b64, coord: mid, idx: mid });
+            });
+            window._svMprReady = true;
+          }
+        })
+        .catch(() => {});
+
+      // Parallel: also fetch full slice info (total slices) for slider setup
+      const planes = ['axial', 'coronal', 'sagittal'];
+      let done = 0;
+      planes.forEach(plane => {
+        fetch(`/api/mpr_slice/${scanId}?plane=${plane}`)
+          .then(r => r.json())
+          .then(d => {
+            if (d.error) {
+              const spin = document.getElementById(`sv-mpr-spin-${plane}`);
+              if (spin) { spin.textContent = 'No MPR data — run 3D Analysis first'; spin.style.color = '#94a3b8'; }
+              return;
+            }
+            const total = d.total || 100;
+            window._svMprTotals[plane] = total;
+            const mid = Math.floor(total / 2);
+            const sl = document.getElementById(`sv-mpr-sl-${plane}`);
+            if (sl) { sl.max = total - 1; sl.value = mid; }
+            // Only update image if preview wasn't already loaded
+            if (!window._svMprReady) _svMprUpdate(plane, d);
+            done++;
+            if (done === planes.length) window._svMprReady = true;
+          })
+          .catch(() => {
+            const spin = document.getElementById(`sv-mpr-spin-${plane}`);
+            if (spin) { spin.textContent = 'Could not load slice'; spin.style.color = '#ef4444'; }
+          });
+      });
+    }
+
+    function svMprFetch(plane, idx) {
+      const scanId = window._svMprScanId;
+      if (!scanId) return;
+      clearTimeout(window._svMprInFlight[plane]);
+      window._svMprInFlight[plane] = setTimeout(() => {
+        const numEl = document.getElementById(`sv-mpr-num-${plane}`);
+        if (numEl) numEl.textContent = idx;
+        fetch(`/api/mpr_slice/${scanId}?plane=${plane}&idx=${idx}`)
+          .then(r => r.json())
+          .then(d => { if (!d.error) _svMprUpdate(plane, d); })
+          .catch(e => console.warn('[sv-MPR fetch]', e));
+      }, 60);
+    }
+
+    function _svMprUpdate(plane, d) {
+      const img  = document.getElementById(`sv-mpr-img-${plane}`);
+      const lbl  = document.getElementById(`sv-mpr-lbl-${plane}`);
+      const num  = document.getElementById(`sv-mpr-num-${plane}`);
+      const spin = document.getElementById(`sv-mpr-spin-${plane}`);
+      const pfx  = { axial: 'z', coronal: 'y', sagittal: 'x' };
+      if (img) {
+        img.style.opacity = 0;
+        img.onload = () => { img.style.opacity = 1; if (spin) spin.style.display = 'none'; };
+        // Both d.image (API) and d.b64 (preview) are full data URIs
+        const imgSrc = d.image || d.b64 || null;
+        if (imgSrc) img.src = imgSrc;
+      }
+      const coord = d.coord ?? d.idx;
+      if (lbl) lbl.textContent = `${pfx[plane]} = ${coord}`;
+      if (num) num.textContent = coord;
+    }
+
+    function svSetBrainOpacity(val) {
+      const pct = parseInt(val, 10);
+      document.getElementById('sv_opLabel').textContent = pct + '%';
+      if (typeof Plotly !== 'undefined') {
+        Plotly.restyle('sv_plot3dDiv', { opacity: pct / 100 }, [0]);
+      }
+    }
+
+    function svRotate3D(dir) {
+      if (typeof Plotly === 'undefined') return;
+      const el = document.getElementById('sv_plot3dDiv');
+      if (!el || !el._fullLayout) return;
+      const cam = el._fullLayout.scene.camera;
+      const angle = 0.18;
+      const cos = Math.cos(angle), sin = Math.sin(angle);
+      let { x, y, z } = cam.eye;
+      if (dir === 'left')  { const nx = x*cos - y*sin; y = x*sin + y*cos; x = nx; }
+      if (dir === 'right') { const nx = x*cos + y*sin; y = -x*sin + y*cos; x = nx; }
+      if (dir === 'up')    { const r = Math.sqrt(x*x+z*z); const a2 = Math.atan2(z,r)-angle; z = r*Math.sin(a2); }
+      if (dir === 'down')  { const r = Math.sqrt(x*x+z*z); const a2 = Math.atan2(z,r)+angle; z = r*Math.sin(a2); }
+      Plotly.relayout('sv_plot3dDiv', { 'scene.camera.eye': { x, y, z } });
+    }
+
+    function svResetCamera3D() {
+      if (typeof Plotly === 'undefined') return;
+      Plotly.relayout('sv_plot3dDiv', { 'scene.camera': { eye: { x: 1.5, y: 1.5, z: 1.5 } } });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+
+    document.getElementById("localizeBtn").addEventListener("click", () => {
+      const scanId = new URLSearchParams(window.location.search).get("scan_id");
+      if (!scanId) return;
+
+      const locText = document.getElementById("locText");
+      const locSpinner = document.getElementById("locSpinner");
+      const locPercent = document.getElementById("locPercent");
+
+      locText.style.display = "none";
+      locSpinner.style.display = "inline-block";
+      locPercent.style.display = "inline";
+
+      let p = 0;
+      const interval = setInterval(() => {
+        p = Math.min(p + 7, 90);
+        locPercent.textContent = p + "%";
+      }, 120);
+
+      const formData = new FormData();
+      formData.append("scan_id", scanId);
+
+      fetch("/segment_only", {
+        method: "POST",
+        body: formData
+      })
+        .then(r => r.json())
+        .then(d => {
+          clearInterval(interval);
+
+          if (d.status !== "success") {
+            alert("Segmentation failed.");
+            return;
+          }
+
+          locPercent.textContent = "100%";
+
+          document.getElementById("maskOverlay").src = d.mask;
+          document.getElementById("segCard").style.display = "block";
+
+          setTimeout(() => {
+            locSpinner.style.display = "none";
+            locPercent.style.display = "none";
+            locText.style.display = "inline";
+          }, 300);
+        });
+    });
+
+    document.addEventListener("click", e => {
+      if (e.target.classList.contains("zoomable")) {
+        document.getElementById("modalImg").src = e.target.src;
+        document.getElementById("imgModal").style.display = "block";
+      }
+      if (e.target.classList.contains("close")) {
+        document.getElementById("imgModal").style.display = "none";
+      }
+    });
+
+    const logoutBtn = document.getElementById("logoutBtn");
+    const logoutPopup = document.getElementById("logoutPopup");
+    const confirmLogout = document.getElementById("confirmLogout");
+    const cancelLogout = document.getElementById("cancelLogout");
+
+    logoutBtn.addEventListener("click", function (event) {
+      event.preventDefault();
+      logoutPopup.style.display = "flex";
+    });
+
+    cancelLogout.addEventListener("click", function () {
+      logoutPopup.style.display = "none";
+    });
+
+    confirmLogout.addEventListener("click", function () {
+      logoutPopup.style.display = "none";
+      sessionStorage.clear();
+      localStorage.clear();
+      window.location.href = "{{ url_for('logout') }}";
+    });
+
+    window.addEventListener("click", function (event) {
+      if (event.target === logoutPopup) {
+        logoutPopup.style.display = "none";
+      }
+    });
+
+    // ===== Report Modal =====
+    let rvmData = {};
+    let rvmReportId = null;
+
+    function openReportViewModal(data) {
+      rvmData = data;
+      rvmReportId = data.report_id || null;
+      document.getElementById('rvm_doctorName').value   = data.doctor_name   || '';
+      document.getElementById('rvm_doctorEmail').value  = data.doctor_email  || '';
+      document.getElementById('rvm_patientName').value  = data.patient_name  || '';
+      document.getElementById('rvm_patientPhone').value = data.patient_phone || '';
+      document.getElementById('rvm_patientAge').value   = data.patient_age   || '';
+      document.getElementById('rvm_patientGender').value= data.patient_gender|| '';
+
+      function fillBullets(elId, items) {
+        const el = document.getElementById(elId);
+        el.innerHTML = '';
+        (items || []).forEach(item => { const li = document.createElement('li'); li.textContent = item; el.appendChild(li); });
+        if (!items || !items.length) el.innerHTML = '<li>No data available</li>';
+      }
+      fillBullets('rvm_findings',   data.report_findings   || []);
+      fillBullets('rvm_impression', data.report_impression || []);
+
+      // ── note text ───────────────────────────────────────────────────────────
+      const note = document.getElementById('rvm_note');
+      if (note) {
+        note.textContent = data.is_3d
+          ? 'Note: Volumetric data from 3D NIfTI MRI segmentation (nnUNet-based). Correlate with full clinical context.'
+          : 'Note: Content is based only on model outputs (pixel-based 2D metrics). Correlate with full MRI series and clinical context.';
+      }
+
+      // ── 3D slices download section ────────────────────────────────────────
+      const slicesDlDiv  = document.getElementById('rvm_slicesDl');
+      const slicesLinkEl = document.getElementById('rvm_slicesLink');
+      if (data.is_3d && data.scan_id) {
+        if (slicesDlDiv)  slicesDlDiv.style.display  = 'block';
+        if (slicesLinkEl) slicesLinkEl.href = `/download_slices_3d?scan_id=${data.scan_id}`;
+      } else {
+        if (slicesDlDiv) slicesDlDiv.style.display = 'none';
+      }
+
+      document.getElementById('rvmOverlay').classList.add('open');
+    }
+    
+
+    async function downloadScanReportPDF() {
+      const is3d = !!(rvmData && rvmData.is_3d);
+      const pdfBtn = document.querySelector('button[onclick="downloadScanReportPDF()"]');
+      if (pdfBtn) { pdfBtn.disabled = true; pdfBtn.textContent = 'Preparing…'; }
+
+      const doctorName    = document.getElementById('rvm_doctorName').value  || '—';
+      const doctorEmail   = document.getElementById('rvm_doctorEmail').value || '—';
+      const patientName   = document.getElementById('rvm_patientName').value  || '—';
+      const patientPhone  = document.getElementById('rvm_patientPhone').value || '—';
+      const patientAge    = document.getElementById('rvm_patientAge').value   || '—';
+      const patientGender = document.getElementById('rvm_patientGender').value|| '—';
+      const scanDate      = rvmData.report_date || '—';
+      const reportDate    = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
+      const findingsHTML  = (rvmData.report_findings   || []).map(b=>`<li>${b}</li>`).join('');
+      const impressionHTML= (rvmData.report_impression || []).map(b=>`<li>${b}</li>`).join('');
+
+      async function toDataURL(url) {
+        if (!url || url === window.location.href) return null;
+        try {
+          const resp = await fetch(url, { cache: 'force-cache' });
+          if (!resp.ok) return null;
+          const blob = await resp.blob();
+          return new Promise(resolve => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror  = () => resolve(null);
+            reader.readAsDataURL(blob);
+          });
+        } catch { return null; }
+      }
+
+      const origSrc = !is3d ? await toDataURL(rvmData.report_mri  || '') : null;
+      const maskSrc = !is3d ? await toDataURL(rvmData.report_mask || '') : null;
+
+      // For 3D: fetch MPR slices from API (reliable regardless of whether slices tab was opened)
+      let mprImages = [];
+      if (is3d) {
+        if (pdfBtn) pdfBtn.textContent = 'Loading slices…';
+        const svScanId = new URLSearchParams(window.location.search).get('scan_id') || '';
+        if (svScanId) {
+          const mprPlanes = [
+            { plane: 'axial',    label: 'AXIAL',    idx: 77  },
+            { plane: 'coronal',  label: 'CORONAL',  idx: 120 },
+            { plane: 'sagittal', label: 'SAGITTAL', idx: 120 },
+          ];
+          for (const p of mprPlanes) {
+            try {
+              const resp = await fetch(`/api/mpr_slice/${svScanId}?plane=${p.plane}&idx=${p.idx}`, { cache: 'force-cache' });
+              if (!resp.ok) continue;
+              const json = await resp.json();
+              if (json.image) mprImages.push({ label: p.label, num: json.idx ?? p.idx, b64: json.image });
+            } catch { /* skip on error */ }
+          }
+        }
+      }
+
+      if (pdfBtn) {
+        pdfBtn.disabled = false;
+        pdfBtn.innerHTML = `<svg width="14" height="14" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Download PDF`;
+      }
+
+      const reportTitle = is3d ? '3D Segmentation Report' : 'Radiology Report';
+      const aiBadge     = is3d ? '&#10003; AI-Generated &bull; 3D' : '&#10003; AI-Generated';
+      const noteText    = is3d
+        ? 'Content is based on 3D volumetric NIfTI MRI segmentation (nnUNet). Correlate with full clinical context and histopathology before any clinical decision.'
+        : 'Content is AI-generated based on model outputs (pixel-based 2D metrics only). This report must be correlated with the full MRI series and reviewed by a qualified radiologist before any clinical decision.';
+
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Brainalyze – ${reportTitle}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Poppins',Arial,sans-serif; background:#fff; color:#1a1a2e; font-size:13px; }
+    .page { max-width:780px; margin:0 auto; padding:30px 40px; }
+    .header { display:flex; justify-content:space-between; align-items:center; padding-bottom:16px; border-bottom:3px solid #506DCA; margin-bottom:20px; }
+    .header-left { display:flex; align-items:center; gap:12px; }
+    .brand-name { font-size:22px; font-weight:700; color:#506DCA; }
+    .brand-sub { font-size:11px; color:#6b7280; margin-top:2px; }
+    .report-title-block { text-align:right; }
+    .report-title-block h1 { font-size:18px; font-weight:700; color:#1a1a2e; }
+    .ai-badge { display:inline-block; background:#d1fae5; color:#065f46; font-size:10px; font-weight:600; padding:3px 10px; border-radius:20px; margin-top:4px; border:1px solid #6ee7b7; }
+    .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; background:#f8faff; border:1px solid #dbe1f4; border-radius:12px; padding:16px 20px; }
+    .info-item label { font-size:10px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:2px; }
+    .info-item span { font-size:13px; font-weight:500; color:#1a1a2e; }
+    .images-section { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px; }
+    .img-card { border:1px solid #dbe1f4; border-radius:12px; overflow:hidden; }
+    .img-card .img-label { background:#f0f4ff; font-size:10px; font-weight:600; color:#506DCA; text-transform:uppercase; letter-spacing:0.5px; padding:6px 12px; border-bottom:1px solid #dbe1f4; }
+    .img-card img { width:100%; height:180px; object-fit:cover; display:block; }
+    .section { margin-bottom:18px; }
+    .section-label { font-size:10px; font-weight:700; color:#506DCA; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; padding-bottom:4px; border-bottom:1px solid #e5e7eb; }
+    .section ul { padding-left:18px; }
+    .section ul li { margin-bottom:5px; line-height:1.6; color:#1a1a2e; }
+    .section-box { background:#f8faff; border:1px solid #dbe1f4; border-radius:10px; padding:14px 18px; }
+    .footer { display:flex; justify-content:space-between; align-items:center; padding-top:14px; border-top:1px solid #e5e7eb; font-size:10px; color:#9ca3af; }
+    .footer strong { color:#506DCA; }
+    .mpr-section { margin-bottom:20px; }
+    .mpr-section .section-label { font-size:10px; font-weight:700; color:#506DCA; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; padding-bottom:4px; border-bottom:1px solid #e5e7eb; }
+    .mpr-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+    .mpr-card { border-radius:10px; overflow:hidden; background:#080808; border:1px solid #1e293b; }
+    .mpr-card .mpr-header { display:flex; justify-content:space-between; align-items:center; padding:5px 10px; font-size:9px; font-weight:700; letter-spacing:1px; color:#fff; border-bottom:1px solid #1e293b; }
+    .mpr-card .mpr-header.axial    { background:#7f1d1d; }
+    .mpr-card .mpr-header.coronal  { background:#14532d; }
+    .mpr-card .mpr-header.sagittal { background:#1e3a5f; }
+    .mpr-card img { width:100%; display:block; object-fit:cover; aspect-ratio:1/1; }
+    @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .page { padding:20px 30px; } }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="header">
+      <div class="header-left">
+        <div>
+          <div class="brand-name">&#129504; Brainalyze</div>
+          <div class="brand-sub">AI-Powered Brain MRI Analysis</div>
+        </div>
+      </div>
+      <div class="report-title-block">
+        <h1>${reportTitle}</h1>
+        <span class="ai-badge">${aiBadge}</span>
+      </div>
+    </div>
+    <div class="info-grid">
+      <div class="info-item"><label>Radiologist</label><span>${doctorName}</span></div>
+      <div class="info-item"><label>Email</label><span>${doctorEmail}</span></div>
+      <div class="info-item"><label>Patient Name</label><span>${patientName}</span></div>
+      <div class="info-item"><label>Phone Number</label><span>${patientPhone}</span></div>
+      <div class="info-item"><label>Age</label><span>${patientAge}</span></div>
+      <div class="info-item"><label>Gender</label><span>${patientGender}</span></div>
+      <div class="info-item"><label>Scan Date</label><span>${scanDate}</span></div>
+      <div class="info-item"><label>Report Date</label><span>${reportDate}</span></div>
+    </div>
+    ${origSrc ? `<div class="images-section">
+      <div class="img-card"><div class="img-label">Original MRI Scan</div><img src="${origSrc}" alt="MRI"></div>
+      ${maskSrc ? `<div class="img-card"><div class="img-label">Tumor Segmentation Mask</div><img src="${maskSrc}" alt="Segmentation"></div>` : ''}
+    </div>` : ''}
+    ${is3d && mprImages.length > 0 ? `
+    <div class="mpr-section">
+      <div class="section-label">MPR Segmentation Views</div>
+      <div class="mpr-grid">
+        ${mprImages.map(m => `<div class="mpr-card">
+          <div class="mpr-header ${m.label.toLowerCase()}">${m.label}<span style="font-weight:400;opacity:.75;">${m.num !== '–' ? ' · ' + m.num : ''}</span></div>
+          <img src="${m.b64}" alt="${m.label}">
+        </div>`).join('')}
+      </div>
+    </div>` : ''}
+    <div class="section"><div class="section-label">Findings</div><div class="section-box"><ul>${findingsHTML || '<li>No findings available</li>'}</ul></div></div>
+    <div class="section"><div class="section-label">Impression</div><div class="section-box"><ul>${impressionHTML || '<li>No impression available</li>'}</ul></div></div>
+    <div class="footer">
+      <div>Generated by <strong>Brainalyze AI</strong> &bull; Confidential – For Medical Use Only</div>
+      <div>${reportDate}</div>
+    </div>
+  </div>
+  <script>window.onload = () => { window.print(); }<\/script>
+</body>
+</html>`;
+
+      const win = window.open('', '_blank');
+      win.document.write(html);
+      win.document.close();
+      win.focus();
+    }
+
+    // ===== Report Edit Mode =====
+    let rvmEditMode = false;
+
+    function rvmToggleEdit() {
+      rvmEditMode = !rvmEditMode;
+      const inputs = document.querySelectorAll('#rvmOverlay .rvm-input');
+      const findingsLis  = document.querySelectorAll('#rvm_findings li');
+      const impressionLis = document.querySelectorAll('#rvm_impression li');
+      const editBtn   = document.getElementById('rvmEditBtn');
+      const saveRow   = document.getElementById('rvmSaveRow');
+
+      inputs.forEach(inp => {
+        inp.readOnly = !rvmEditMode;
+        inp.style.background = rvmEditMode ? '#fff' : '#f8faff';
+        inp.style.borderColor = rvmEditMode ? '#506DCA' : '#dbe1f4';
+        inp.style.cursor = rvmEditMode ? 'text' : 'default';
+      });
+      findingsLis.forEach(li => {
+        li.contentEditable = rvmEditMode ? 'true' : 'false';
+        li.style.outline   = 'none';
+        li.style.padding   = rvmEditMode ? '2px 4px' : '';
+      });
+      impressionLis.forEach(li => {
+        li.contentEditable = rvmEditMode ? 'true' : 'false';
+        li.style.outline   = 'none';
+        li.style.padding   = rvmEditMode ? '2px 4px' : '';
+      });
+
+      if (rvmEditMode) {
+        editBtn.textContent = '✕ Cancel Edit';
+        editBtn.style.background = '#64748b';
+        if (saveRow) saveRow.style.display = 'block';
+      } else {
+        editBtn.innerHTML = '&#9998; Edit Report';
+        editBtn.style.background = '#2563eb';
+        if (saveRow) saveRow.style.display = 'none';
+      }
+    }
+
+    async function rvmSaveChanges() {
+      if (!rvmReportId) { alert('No report ID found.'); return; }
+      const saveBtn = document.getElementById('rvmSaveBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+
+      const findings  = [...document.querySelectorAll('#rvm_findings li')].map(li => li.textContent.trim()).filter(Boolean);
+      const impression = [...document.querySelectorAll('#rvm_impression li')].map(li => li.textContent.trim()).filter(Boolean);
+
+      const payload = {
+        report_id:      rvmReportId,
+        doctor_name:    document.getElementById('rvm_doctorName').value.trim(),
+        doctor_email:   document.getElementById('rvm_doctorEmail').value.trim(),
+        patient_name:   document.getElementById('rvm_patientName').value.trim(),
+        patient_phone:  document.getElementById('rvm_patientPhone').value.trim(),
+        patient_age:    document.getElementById('rvm_patientAge').value.trim(),
+        patient_gender: document.getElementById('rvm_patientGender').value.trim(),
+        findings,
+        impression,
+      };
+
+      try {
+        const res = await fetch('/update_report_content', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const d = await res.json();
+        if (d.ok) {
+          saveBtn.textContent = '✓ Saved!';
+          saveBtn.style.background = '#16a34a';
+          setTimeout(() => {
+            rvmToggleEdit();
+            saveBtn.disabled = false;
+            saveBtn.textContent = '✓ Save Changes';
+            saveBtn.style.background = '#2563eb';
+          }, 1200);
+        } else {
+          alert('Save failed: ' + (d.error || 'Unknown error'));
+          saveBtn.disabled = false;
+          saveBtn.textContent = '✓ Save Changes';
+        }
+      } catch (err) {
+        alert('Network error: ' + err);
+        saveBtn.disabled = false;
+        saveBtn.textContent = '✓ Save Changes';
+      }
+    }
+
+    // Make inputs read-only by default (edit mode off)
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('#rvmOverlay .rvm-input').forEach(inp => {
+        inp.readOnly = true;
+        inp.style.background = '#f8faff';
+        inp.style.cursor = 'default';
+      });
+    });
+
+  </script>
+
+
+<!-- Report View Modal -->
+<div class="rvm-overlay" id="rvmOverlay" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="rvm-box">
+    <button class="rvm-close" id="rvmClose" onclick="document.getElementById('rvmOverlay').classList.remove('open')">&times;</button>
+
+    <!-- Download PDF button — top right -->
+    <button onclick="downloadScanReportPDF()"
+      style="position:absolute;top:14px;right:210px;background:#16a34a;color:white;border:none;padding:10px 18px;border-radius:12px;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(22,163,74,0.25);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Download PDF
+    </button>
+
+    <!-- Edit Report button — top right -->
+    <button onclick="rvmToggleEdit()" id="rvmEditBtn"
+      style="position:absolute;top:14px;right:58px;background:#506DCA;color:white;border:none;padding:10px 18px;border-radius:12px;cursor:pointer;font-size:14px;display:flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(80,109,202,0.25);">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 20h9"/><path d="M16.5 3.5l4 4L7 21H3v-4L16.5 3.5z"/>
+      </svg>
+      Edit Report
+    </button>
+
+    <!-- Header: chip + title -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding-right:40px;">
+      <span class="chip" style="background:#eef1ff;color:#506DCA;font-size:11px;font-weight:600;padding:3px 12px;border-radius:20px;border:none;">AI-Generated</span>
+      <h3 style="margin:0;color:#1f2240;font-size:18px;font-weight:700;" id="rvmReportTitle">Radiology Report</h3>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;background:#f8faff;border:1px solid #dbe1f4;border-radius:12px;padding:14px 18px;">
+      <div><div class="rvm-field-label">Radiologist</div><input class="rvm-input" id="rvm_doctorName" type="text"></div>
+      <div><div class="rvm-field-label">Email</div><input class="rvm-input" id="rvm_doctorEmail" type="text"></div>
+      <div><div class="rvm-field-label">Patient Name</div><input class="rvm-input" id="rvm_patientName" type="text"></div>
+      <div><div class="rvm-field-label">Phone Number</div><input class="rvm-input" id="rvm_patientPhone" type="text"></div>
+      <div><div class="rvm-field-label">Age</div><input class="rvm-input" id="rvm_patientAge" type="text"></div>
+      <div><div class="rvm-field-label">Gender</div><input class="rvm-input" id="rvm_patientGender" type="text"></div>
+    </div>
+    <div class="rvm-section-lbl">Findings</div>
+    <ul class="rvm-bullets" id="rvm_findings"></ul>
+    <div class="rvm-section-lbl" style="margin-top:14px;">Impression</div>
+    <ul class="rvm-bullets" id="rvm_impression"></ul>
+    <!-- Save Changes button — shown in edit mode -->
+    <div id="rvmSaveRow" style="display:none;margin-top:16px;">
+      <button onclick="rvmSaveChanges()" id="rvmSaveBtn"
+        style="width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">
+        &#10003; Save Changes
+      </button>
+    </div>
+    <p id="rvm_note" style="margin-top:12px;font-size:11px;color:#9ca3af;background:#f8faff;border-radius:8px;padding:10px 14px;">
+      Note: Content is based only on model outputs (pixel-based 2D metrics). Correlate with full MRI series and clinical context.
+    </p>
+  </div>
+</div>
+<script src="/static/js/nav.js"></script>
+<script src="/static/js/helpbot.js"></script>
+</body>
+
+</html>

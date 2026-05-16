@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <title>Brainalyze | Forgot Password</title>
+
+
+
+  <style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Poppins', 'Cairo', Arial, sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f7faff;
+  position: relative;
+}
+
+.site-logo {
+  position: absolute;
+  top: 1.5625rem;
+  left: 1.5625rem;
+  width: 5.625rem;
+  cursor: pointer;
+  transition: .3s;
+}
+.site-logo:hover {
+  transform: scale(1.05);
+}
+
+.form-box {
+  width: 30rem;
+  min-height: 30rem;
+  padding: 2.5rem 2.25rem;
+  background: #f4f7fb;
+  border-radius: 1.25rem;
+  box-shadow: 0 0.5rem 1.5625rem rgba(0,0,0,.15);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+}
+
+.form-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-top: 0.625rem;
+}
+
+h2 {
+  text-align: center;
+  color: #506DCA;
+  font-size: 1.45rem;
+  margin-bottom: 0.625rem;
+}
+
+p {
+  text-align: center;
+  color: #435273;
+  font-size: 0.95rem;
+  margin-bottom: 1.125rem;
+}
+
+input {
+  width: 100%;
+  padding: 0.8125rem;
+  border-radius: 0.625rem;
+  border: 1px solid #cbd5e1;
+  background: #f9fafb;
+  font-size: 0.95rem;
+  margin-bottom: 0.875rem;
+}
+input:focus {
+  outline: none;
+  border-color: #506DCA;
+  box-shadow: 0 0 0.375rem rgba(80,109,202,.25);
+}
+
+button {
+  padding: 0.8125rem;
+  width: 100%;
+  border-radius: 0.625rem;
+  border: none;
+  background: #506DCA;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: .25s;
+  margin-top: 0.625rem;
+}
+button:hover {
+  background: #1e40af;
+  transform: translateY(-0.0625rem);
+}
+
+.message {
+  font-size: 0.85rem;
+  text-align: center;
+  opacity: 0;
+  transition: .25s;
+}
+.message.show { opacity: 1; }
+.error { color: #d92b2b; }
+.success { color: #1e2a47; }
+
+.back-arrow {
+  position: absolute;
+  top: 0.9375rem;
+  left: 0.9375rem;
+  font-size: 1.4rem;
+  color: #1e2a47;
+  font-weight: bold;
+  text-decoration: none;
+  transition: .3s;
+}
+.back-arrow:hover {
+  transform: translateX(-0.1875rem);
+}
+</style>
+
+</head>
+<body>
+
+  <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Brainalyze Logo" class="site-logo">
+
+  <div class="form-box">
+   <a href="{{ url_for('register_login') }}#login" class="back-arrow">←</a>
+
+    <h2>Forgot Password?</h2>
+    <label id="forgotpasslabel">Enter your email to reset your password</label>
+    <input type="email" id="resetEmail" placeholder="Your Email" required />
+    <button id="resetBtn">Submit</button>
+    <p class="message" id="resetMessage"></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getAuth, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC5bb6M-sEVu9JL7mkVLFvkv44k8JIG9Es",
+      authDomain: "brainalyze.firebaseapp.com",
+      projectId: "brainalyze",
+      storageBucket: "brainalyze.appspot.com",
+      messagingSenderId: "930694068293",
+      appId: "1:930694068293:web:72fd905080497218010b2c",
+      measurementId: "G-FJ99J54EYR"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const resetBtn = document.getElementById("resetBtn");
+    const resetEmail = document.getElementById("resetEmail");
+    const resetMessage = document.getElementById("resetMessage");
+    const ForgetPasswordLabel = document.getElementById("forgotpasslabel");
+
+    function showMessage(msg, type) {
+      resetMessage.textContent = msg;
+      resetMessage.className = `message ${type} show`;
+      setTimeout(() => resetMessage.classList.remove("show"), 4000);
+    }
+
+    const ForgetPassword = async () => {
+      const email = resetEmail.value.trim();
+      if (!email) {
+        showMessage("Please enter your email address.", "error");
+        return;
+      }
+
+      try {
+        await sendPasswordResetEmail(auth, email);
+        showMessage("Reset link sent! Check your email.", "success");
+
+        setTimeout(() => {
+          window.location.href = "{{ url_for('check_email') }}";
+        }, 1500);
+
+      } catch (error) {
+        let message = "Something went wrong. Please try again.";
+        if (error.code === "auth/user-not-found") message = "No account found with this email.";
+        if (error.code === "auth/invalid-email") message = "Invalid email address.";
+        showMessage(message, "error");
+        console.error(error);
+      }
+    };
+
+    resetBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      ForgetPassword();
+    });
+
+  </script>
+
+</body>
+</html>

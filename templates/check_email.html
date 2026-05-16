@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Brainalyze - Check your email</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+
+
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Poppins', 'Cairo', Arial, sans-serif;
+    }
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f7faff;
+      position: relative;
+    }
+    .site-logo {
+      position: absolute;
+      top: 1.5625rem;
+      left: 1.5625rem;
+      width: 5.625rem;
+      cursor: pointer;
+      transition: .3s;
+    }
+    .site-logo:hover {
+      transform: scale(1.05);
+    }
+    .form-box {
+      width: 30rem;
+      min-height: 18rem;
+      padding: 2.5rem 2.25rem;
+      background: #f4f7fb;
+      border-radius: 1.25rem;
+      box-shadow: 0 0.5rem 1.5625rem rgba(0,0,0,.15);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      text-align: center;
+    }
+    h2 {
+      text-align: center;
+      color: #506DCA;
+      font-size: 1.45rem;
+      margin-bottom: 0.75rem;
+    }
+    p {
+      text-align: center;
+      color: #435273;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.6;
+    }
+    .button-link {
+      display: inline-block;
+      padding: 0.8125rem;
+      width: 100%;
+      border-radius: 0.625rem;
+      border: none;
+      background: #506DCA;
+      color: #fff;
+      font-size: 1rem;
+      text-decoration: none;
+      cursor: pointer;
+      transition: .25s;
+    }
+    .button-link:hover {
+      background: #1e40af;
+      transform: translateY(-0.0625rem);
+    }
+    .back-arrow {
+      position: absolute;
+      top: 0.9375rem;
+      left: 0.9375rem;
+      font-size: 1.4rem;
+      color: #1e2a47;
+      font-weight: bold;
+      text-decoration: none;
+      transition: .3s;
+    }
+    .back-arrow:hover {
+      transform: translateX(-0.1875rem);
+    }
+  </style>
+</head>
+<body>
+
+  <img src="{{ url_for('static', filename='images/logo.png') }}"
+       alt="Brainalyze Logo"
+       class="site-logo"
+       onclick="window.location.href='{{ url_for('index') }}'">
+
+  <div class="form-box">
+    <a href="{{ url_for('register_login') }}#login" class="back-arrow">←</a>
+
+    <h2>Check your inbox</h2>
+    <p>
+      If an account exists with the email you entered, a password reset link
+      has been sent. Please check your inbox and follow the instructions.
+    </p>
+
+    <a href="{{ url_for('register_login') }}#login" class="button-link">
+      Back to login
+    </a>
+  </div>
+
+</body>
+</html>

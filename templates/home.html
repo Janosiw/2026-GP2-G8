@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <title>Brainalyze | Home</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Cairo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+
+  <style>
+    body {
+      font-family: "Poppins", "Cairo", Arial, sans-serif;
+      background-color: #f7faff;
+      display: flex;
+      flex-direction: row;
+    }
+
+    .sidebar { z-index: 1000 !important; }
+
+    .main {
+      display: flex;
+      flex-direction: column;
+      padding: 24px 28px 40px;
+      align-items: center;
+      transition: margin-left .35s ease;
+      gap: 20px;
+      flex: 1;
+    }
+
+    .main-wrapper {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .footer-medical {
+      margin-top: auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    .brain-section { margin-bottom: 0; }
+
+    .view-btn {
+      background: #eef2ff;
+      color: #506DCA;
+      padding: 8px 18px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      border: 1px solid #dbe1f4;
+      cursor: pointer;
+      transition: 0.2s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .view-btn:hover { background: #dce4ff; border-color: #b8c4f0; }
+
+    .segmented {
+      display: flex;
+      background: #eef2ff;
+      padding: 5px;
+      border-radius: 12px;
+      gap: 4px;
+      border: 1px solid #dbe1f4;
+    }
+
+    .seg-btn {
+      border: none;
+      background: transparent;
+      padding: 7px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      color: #506DCA;
+      font-size: 13px;
+      transition: 0.2s;
+    }
+
+    .seg-btn.active {
+      background: #506DCA;
+      color: #fff;
+    }
+
+    .seg-btn:not(.active):hover { background: #dce4ff; }
+
+    .activity-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      background: #fff;
+      padding: 14px 20px;
+      border-radius: 12px;
+      border: 1px solid #e8ecf8;
+      margin-bottom: 8px;
+      transition: border-color 0.2s;
+    }
+
+    .activity-row:hover { border-color: #c4d0f5; }
+
+    .activity-name {
+      font-weight: 600;
+      color: #1e2a47;
+      font-size: 14px;
+      text-align: left;
+    }
+
+    .activity-sub {
+      font-size: 12px;
+      color: #6b7a99;
+      margin-top: 3px;
+      text-align: left;
+    }
+
+    .hide { display: none; }
+
+    .scans-container { text-align: left !important; }
+    .activity-row, .activity-row * { text-align: left !important; }
+
+    /* ── Welcome banner ── */
+    .welcome-banner {
+      max-width: 980px;
+      width: 100%;
+      background: #fff;
+      border: 1px solid #e8ecf8;
+      border-radius: 16px;
+      border-left: 4px solid #506DCA;
+      padding: 22px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .welcome-banner-left h2 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #1e2a47;
+      margin: 0 0 4px;
+    }
+
+    .welcome-banner-left p {
+      font-size: 13px;
+      color: #6b7a99;
+      margin: 0;
+    }
+
+    .welcome-date {
+      font-size: 11px;
+      color: #adb5c9;
+      margin-top: 5px;
+      font-weight: 500;
+    }
+
+    .stats-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #f4f7ff;
+      border: 1px solid #dbe1f4;
+      border-radius: 12px;
+      padding: 16px 28px;
+      min-width: 120px;
+      transition: border-color 0.2s;
+    }
+
+    .stat-pill:hover { border-color: #a8b8e8; }
+
+    .stat-pill .num {
+      font-size: 30px;
+      font-weight: 700;
+      color: #506DCA;
+      line-height: 1;
+    }
+
+    .stat-pill .lbl {
+      font-size: 11px;
+      color: #6b7a99;
+      margin-top: 5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    @media (max-width: 768px) {
+      html, body { overflow-x: hidden !important; }
+
+      .sidebar {
+        position: fixed !important;
+        top: 0;
+        left: -240px;
+        width: 200px !important;
+        height: 100vh;
+        background: #fff;
+        z-index: 2000 !important;
+        transition: 0.35s ease !important;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+      }
+
+      .footer-medical { margin-left: 0 !important; width: 100% !important; }
+
+      .fm-wrapper {
+        display: flex;
+        flex-direction: row !important;
+        justify-content: space-between;
+        align-items: center;
+        text-align: center !important;
+        gap: 10px !important;
+        flex-wrap: nowrap;
+      }
+
+      .fm-left, .fm-center, .fm-right { flex: 0 0 auto; }
+
+      .sidebar.active { left: 0 !important; }
+
+      .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(0,0,0,0.35);
+        backdrop-filter: blur(2px);
+        z-index: 1600;
+      }
+
+      .sidebar-overlay.active { display: block; }
+
+      #docheader {
+        left: 0 !important;
+        width: 94% !important;
+        position: fixed !important;
+        top: 0 !important;
+        z-index: 1500 !important;
+        background: #f7faff !important;
+      }
+
+      .main { margin-top: 110px !important; padding: 15px !important; }
+
+      .welcome-banner {
+        flex-direction: column;
+        gap: 16px;
+        padding: 20px !important;
+      }
+
+      .stats-row { justify-content: center; }
+      .view-btn { padding: 6px 14px !important; font-size: 13px !important; margin-left: 8px; }
+      .seg-btn { font-size: 12px; padding: 7px 12px; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar">
+  <div class="brand" onclick="window.location.href='{{ url_for('home') }}'">
+    <img src="{{ url_for('static', filename='images/logo.png') }}"><span>Brainalyze</span>
+  </div>
+
+  <nav class="nav">
+    <a href="{{ url_for('home') }}" class="active">
+      <img src="{{ url_for('static', filename='images/home-icon.jpg') }}"><span>Home</span>
+    </a>
+    <a href="{{ url_for('patients') }}">
+      <img src="{{ url_for('static', filename='images/patient-icon.png') }}"><span>Patients</span>
+    </a>
+    <a href="{{ url_for('dashboard') }}">
+      <img src="{{ url_for('static', filename='images/home-icon.jpg') }}"><span>Dashboard</span>
+    </a>
+    <a href="{{ url_for('reports') }}">
+      <img src="{{ url_for('static', filename='images/patient-icon.png') }}"><span>Reports</span>
+    </a>
+    <a href="{{ url_for('profile') }}">
+      <img src="{{ url_for('static', filename='images/user-icon.jpg') }}"><span>Profile</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+      <a href="#" id="logoutBtn" class="logout">
+      <span>Logout</span>
+    </a>
+  </div>
+</aside>
+
+<div class="popup-overlay" id="logoutPopup">
+  <div class="popup-box">
+    <h2>Confirm Logout</h2>
+    <p>Are you sure you want to log out?</p>
+    <div class="popup-buttons">
+      <button class="popup-cancel" id="cancelLogout">Cancel</button>
+      <button class="popup-confirm" id="confirmLogout">Yes, Logout</button>
+    </div>
+  </div>
+</div>
+
+<div class="main-wrapper">
+
+  <div id="docheader">
+    <div style="display:flex; align-items:center; gap:15px;">
+      <button class="toggle-btn" id="toggleBtn">
+        <img src="{{ url_for('static', filename='images/sidebar_icon.png') }}" width="32" height="32">
+      </button>
+      <span id="pageTitle">Brainalyze <span class="pt-blue">Home</span></span>
+    </div>
+
+    <div class="doctor-info">
+      <div class="doctor-details">
+        <h2>Dr. {{ doctor.name }}</h2>
+        <p>{{ doctor.email }}</p>
+      </div>
+      <img src="{{ doctor.ProfilePicture if doctor.ProfilePicture else url_for('static', filename='images/user.png') }}"
+           class="profile-pic"
+           onclick="window.location.href='{{ url_for('profile') }}'">
+    </div>
+  </div>
+
+  <div class="main">
+
+    <div class="brain-section">
+      <div class="brain-circle">
+        <img src="{{ url_for('static', filename='images/brain1.png') }}">
+      </div>
+    </div>
+
+    <!-- Welcome Banner -->
+    <div class="welcome-banner">
+      <div class="welcome-banner-left">
+        <h2>Welcome back, Dr. {{ doctor.name }}</h2>
+        <p>Here is your clinical overview for today. All AI analysis results are up to date.</p>
+        <div class="welcome-date" id="todayDate"></div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-pill">
+          <div class="num">{{ total_patients }}</div>
+          <div class="lbl">New Patients Today</div>
+        </div>
+        <div class="stat-pill">
+          <div class="num">{{ completed_scans }}</div>
+          <div class="lbl">Scans Analyzed Today</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Last Activities -->
+    <div class="scans-container" style="max-width:980px; width:100%;">
+
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid #eef0f8;">
+        <div>
+          <h3 style="margin:0; font-size:16px; font-weight:700; color:#1e2a47;">Recent Activity</h3>
+          <p style="margin:3px 0 0; font-size:12px; color:#adb5c9; font-weight:500;">Your latest patient visits and MRI scans</p>
+        </div>
+
+        <div class="segmented">
+          <button class="seg-btn active" id="tabVisited" onclick="switchActivity('visited')">
+            Patient Visits
+          </button>
+          <button class="seg-btn" id="tabScan" onclick="switchActivity('scan')">
+            MRI Scans
+          </button>
+        </div>
+      </div>
+
+      <!-- Visited Patients -->
+      <div id="panelVisited">
+        {% if visited_list and visited_list|length > 0 %}
+          {% for v in visited_list %}
+            <div class="activity-row{% if loop.index > 5 %} extra-visit" style="display:none{% endif %}">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:38px; height:38px; border-radius:50%; background:#eef2ff; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#506DCA" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="activity-name">{{ v.name }}</div>
+                  <div class="activity-sub">Last visited &bull; {{ v.time }}</div>
+                </div>
+              </div>
+              <button class="view-btn" onclick="openPatient('{{ v.patient_id }}')">Open Profile</button>
+            </div>
+          {% endfor %}
+          {% if has_more_visited %}
+            <div id="viewMoreVisitBtn" style="text-align:center; margin-top:14px;">
+              <button onclick="loadMoreVisits()" style="font-size:13px; font-weight:600; color:#506DCA; background:transparent; padding:8px 20px; border:1.5px solid #506DCA; border-radius:8px; cursor:pointer; transition:background .15s;">
+                View More
+              </button>
+            </div>
+          {% endif %}
+        {% else %}
+          <div style="text-align:center; padding:40px 20px; color:#9ca3af;">
+            <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="#cbd5e1" stroke-width="1.5" style="margin-bottom:12px; display:block; margin-inline:auto;">
+              <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
+            </svg>
+            <div style="font-size:14px; font-weight:600; color:#6b7a99;">No patient visits yet</div>
+            <div style="font-size:13px; margin-top:4px;">Patient visit history will appear here once you start reviewing cases.</div>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- MRI Scans -->
+      <div id="panelScan" class="hide">
+        {% if scan_list and scan_list|length > 0 %}
+          {% for s in scan_list %}
+            <div class="activity-row{% if loop.index > 5 %} extra-scan" style="display:none{% endif %}">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <div style="width:38px; height:38px; border-radius:50%; background:#eef2ff; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="#506DCA" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 9h.01M15 9h.01M9 15h6"/>
+                  </svg>
+                </div>
+                <div>
+                  <div class="activity-name">{{ s.name }}</div>
+                  <div class="activity-sub">
+                    MRI analyzed &bull; {{ s.time }}{% if s.tumor %} &bull; <span style="color:#506DCA; font-weight:600;">{{ s.tumor }}</span>{% endif %}
+                  </div>
+                </div>
+              </div>
+              <button class="view-btn" onclick="goToCase('{{ s.scan_id }}')">View Scan</button>
+            </div>
+          {% endfor %}
+          {% if has_more_scans %}
+            <div id="viewMoreBtn" style="text-align:center; margin-top:14px;">
+              <button onclick="loadMoreScans()" style="font-size:13px; font-weight:600; color:#506DCA; background:transparent; padding:8px 20px; border:1.5px solid #506DCA; border-radius:8px; cursor:pointer; transition:background .15s;">
+                View More
+              </button>
+            </div>
+          {% endif %}
+        {% else %}
+          <div style="text-align:center; padding:40px 20px; color:#9ca3af;">
+            <svg width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="#cbd5e1" stroke-width="1.5" style="margin-bottom:12px; display:block; margin-inline:auto;">
+              <rect x="3" y="3" width="18" height="18" rx="3"/><path d="M9 9h.01M15 9h.01M9 15h6"/>
+            </svg>
+            <div style="font-size:14px; font-weight:600; color:#6b7a99;">No scans analyzed yet</div>
+            <div style="font-size:13px; margin-top:4px;">Completed MRI scans will appear here after analysis.</div>
+          </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+  </div>
+
+  <footer class="footer-medical">
+    <div class="fm-wrapper">
+      <div class="fm-left">
+        <img src="/static/images/logo.png" class="fm-logo" alt="Brainalyze">
+        <span class="fm-copy">© 2025 Brainalyze</span>
+      </div>
+
+      <div class="fm-center">
+        <span class="fm-title">FOLLOW US</span>
+        <div class="fm-icons">
+          <a style="text-decoration: none; color: black;" href="https://x.com/brainalyze_co">
+            <img src="/static/images/twitter.png" alt=""><br> @brainalyze_co
+          </a>
+        </div>
+      </div>
+
+      <div class="fm-right">
+        <span class="fm-title">CONTACT</span>
+        <p class="fm-contact">+966530782404</p>
+        <p class="fm-contact">443200466@student.ksu.edu.sa</p>
+      </div>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  const toggleBtn = document.getElementById("toggleBtn");
+  const sidebar = document.querySelector(".sidebar");
+  const overlay = document.getElementById("sidebarOverlay");
+  const docheader = document.getElementById("docheader");
+
+  if (window.innerWidth > 768) {
+    toggleBtn.addEventListener("click", () => {
+      sidebar.classList.toggle("collapsed");
+    });
+  }
+
+  toggleBtn.addEventListener("click", () => {
+    if (window.innerWidth <= 768) {
+      sidebar.classList.toggle("active");
+      overlay.classList.toggle("active");
+    }
+  });
+
+  overlay.addEventListener("click", () => {
+    sidebar.classList.remove("active");
+    overlay.classList.remove("active");
+  });
+
+  function goToCase(id) {
+    window.location.href = "view_scan?scan_id=" + id;
+  }
+
+  function loadMoreScans() {
+    const hidden = Array.from(document.querySelectorAll('.extra-scan')).filter(el => el.style.display === 'none');
+    hidden.slice(0, 5).forEach(el => { el.style.display = ''; });
+    if (hidden.length <= 5) {
+      const btn = document.getElementById('viewMoreBtn');
+      if (btn) btn.style.display = 'none';
+    }
+  }
+
+  function loadMoreVisits() {
+    const hidden = Array.from(document.querySelectorAll('.extra-visit')).filter(el => el.style.display === 'none');
+    hidden.slice(0, 5).forEach(el => { el.style.display = ''; });
+    if (hidden.length <= 5) {
+      const btn = document.getElementById('viewMoreVisitBtn');
+      if (btn) btn.style.display = 'none';
+    }
+  }
+
+  function openPatient(patientId) {
+    window.location.href = "/patients/" + patientId + "/profile";
+  }
+
+  function switchActivity(type) {
+    const tabVisited  = document.getElementById("tabVisited");
+    const tabScan     = document.getElementById("tabScan");
+    const panelVisited = document.getElementById("panelVisited");
+    const panelScan   = document.getElementById("panelScan");
+
+    if (type === "visited") {
+      tabVisited.classList.add("active");
+      tabScan.classList.remove("active");
+      panelVisited.classList.remove("hide");
+      panelScan.classList.add("hide");
+    } else {
+      tabScan.classList.add("active");
+      tabVisited.classList.remove("active");
+      panelScan.classList.remove("hide");
+      panelVisited.classList.add("hide");
+    }
+  }
+
+  const logoutBtn   = document.getElementById("logoutBtn");
+  const logoutPopup = document.getElementById("logoutPopup");
+
+  logoutBtn.onclick = e => { e.preventDefault(); logoutPopup.style.display = "flex"; };
+  document.getElementById("cancelLogout").onclick  = () => logoutPopup.style.display = "none";
+  document.getElementById("confirmLogout").onclick = () => window.location.href = "{{ url_for('logout') }}";
+
+  // Show today's date
+  const d = new Date();
+  document.getElementById("todayDate").textContent = d.toLocaleDateString("en-US", {
+    weekday: "long", year: "numeric", month: "long", day: "numeric"
+  });
+</script>
+
+<script src="/static/js/nav.js"></script>
+<script src="/static/js/helpbot.js"></script>
+</body>
+</html>

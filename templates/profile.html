@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/profile.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <title>Brainalyze | Profile</title>
+
+  <!-- ✅ Firebase Compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyC5bb6M-sEVu9JL7mkVLFvkv44k8JIG9Es",
+      authDomain: "brainalyze.firebaseapp.com",
+      projectId: "brainalyze",
+      storageBucket: "brainalyze.firebasestorage.app",
+      messagingSenderId: "930694068293",
+      appId: "1:930694068293:web:72fd905080497218010b2c"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+    }
+  </script>
+
+  <style>
+    .profile-cards { width: 80%; margin: 0 auto 80px; display: flex; flex-direction: column; gap: 18px; }
+    .p-card { background: #fff; border: 1px solid var(--border); border-radius: 16px; padding: 18px; box-shadow: 0 6px 16px rgba(80, 109, 202, 0.12); }
+    .p-card-title { margin: 0 0 12px; color: var(--brand); font-size: 22px; font-weight: 800; }
+
+    .profile-top-card { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-top: 5% ;margin-bottom: 5%; }
+    .profile-left { display: flex; align-items: center; gap: 16px; min-width: 220px; }
+
+    .avatar-box { width: 160px; height: 160px; border-radius: 50%; overflow: hidden; background: #eef2ff; border: 1px solid #e6ebff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    #profileAvatar { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .profile-middle { flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 8px; }
+    .info-line { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+    .info-label { min-width: 90px; font-weight: 700; color: #44507a; }
+    .info-value { color: #1e2a47; font-weight: 600; opacity: .95; word-break: break-word; }
+
+    .profile-right { min-width: 170px; display: flex; justify-content: flex-end; }
+    .edit-btn { border: 1px solid rgba(80, 109, 202, .35); background: #fff; color: var(--brand); border-radius: 10px; padding: 10px 14px; cursor: pointer; font-weight: 700; display: inline-flex; gap: 8px; align-items: center; transition: .18s ease; }
+    .edit-btn:hover { border-color: rgba(80, 109, 202, .7); transform: translateY(-1px); }
+
+    .muted-text { margin: 0; color: #667085; font-size: 13.5px; line-height: 1.6; }
+    .actions { margin-top: 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-outline-brand { background: #fff; border: 1px solid rgba(80, 109, 202, .35); color: var(--brand); padding: 10px 14px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: .18s ease; min-width: 170px; display: inline-flex; align-items: center; gap: 8px; }
+    .btn-outline-brand:hover { border-color: rgba(80, 109, 202, .7); transform: translateY(-1px); }
+
+    #previewImg.profile-pic { width: 130px; height: 130px; border-radius: 50%; object-fit: cover; border: 3px solid #506DCA; box-shadow: 0 6px 16px rgba(80, 109, 202, 0.25); background-color: #f7faff; padding: 4px; cursor: pointer; pointer-events: auto; }
+
+    .popup-confirm[disabled] { opacity: .75; cursor: not-allowed; transform: none !important; }
+
+    /* ✅ make readonly look disabled */
+    input[readonly] { background: #f5f6f8; cursor: not-allowed; }
+
+    @media (max-width: 980px) {
+      .profile-cards { width: 92%; }
+      .profile-right { justify-content: flex-start; }
+
+
+    }
+/* ✅ Header row: title + edit button */
+.p-card-head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* لا نخلي العنوان ياخذ margin لأنه صار داخل head */
+.p-card-title{
+  margin: 0;
+}
+
+/* زر التعديل فوق: أصغر شوي ومناسب للهيدر */
+.edit-btn--top{
+  padding: 8px 12px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+/* ✅ إلغاء التثبيت القديم لو كان موجود */
+.profile-right{
+  position: static !important;
+  right: auto !important;
+  bottom: auto !important;
+  min-width: 0 !important;
+  display: none !important; /* لأننا حذفناه من HTML أصلاً */
+}
+
+/* Responsive: لو صغرت الشاشة، يخليهم تحت بعض بشكل مرتب */
+@media (max-width: 520px){
+  .p-card-head{
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+  </style>
+</head>
+
+<body>
+
+  <div class="toast-container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, message in messages %}
+    <div class="toast {{ category }}">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+  </div>
+
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <aside class="sidebar">
+    <div class="brand" onclick="window.location.href='{{ url_for('home') }}'">
+      <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Brainalyze">
+      <span>Brainalyze</span>
+    </div>
+
+    <nav class="nav">
+      <a href="{{ url_for('home') }}">
+        <img src="{{ url_for('static', filename='images/home-icon.jpg') }}" alt=""><span>Home</span>
+      </a>
+      <a href="{{ url_for('patients') }}">
+        <img src="{{ url_for('static', filename='images/patient-icon.png') }}" alt=""><span>Patients</span>
+      </a>
+      <a href="{{ url_for('dashboard') }}">
+        <img src="{{ url_for('static', filename='images/home-icon.jpg') }}" alt=""><span>Dashboard</span>
+      </a>
+      <a href="{{ url_for('reports') }}">
+      <img src="{{ url_for('static', filename='images/patient-icon.png') }}"><span>Reports</span>
+    </a>
+        <a href="{{ url_for('profile') }}" class="active">
+        <img src="{{ url_for('static', filename='images/user-icon.jpg') }}" alt=""><span>Profile</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <a href="#" id="logoutBtn" class="logout"><span>Logout</span></a>
+    </div>
+  </aside>
+
+  <div class="popup-overlay" id="logoutPopup">
+    <div class="popup-box">
+      <h2>Confirm Logout</h2>
+      <p>Are you sure you want to log out?</p>
+      <div class="popup-buttons">
+        <button class="popup-cancel" id="cancelLogout" type="button">Cancel</button>
+        <button class="popup-confirm" id="confirmLogout" type="button">Yes, Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Edit Profile Popup ===== -->
+  <div class="popup-overlay" id="editProfilePopup">
+    <div class="popup-box">
+      <h2>Edit Profile</h2>
+
+      <form id="profileForm" enctype="multipart/form-data" onsubmit="return false;">
+
+        <div class="profile-picture-wrapper">
+          <label>
+            <img
+              src="{{ doctor.ProfilePicture if doctor.ProfilePicture else url_for('static', filename='images/user-icon.jpg') }}"
+              class="profile-pic" alt="Profile Picture" id="previewImg">
+          </label>
+
+          <p class="profile-hint" style="display:block;">Click the image to change your photo</p>
+          <input type="file" id="profile_pic" name="profile_pic" accept="image/*" style="display:none;">
+        </div>
+
+        <label for="name">Full Name</label>
+        <input type="text" id="name" name="name" value="{{ doctor.name }}" required pattern="^[A-Za-z\s]{3,50}$">
+
+        <label for="email">Email</label>
+        <!-- ✅ IMPORTANT: readonly so it WILL be included in FormData -->
+        <input type="email" id="email" name="email" value="{{ doctor.email }}" required readonly>
+        <!-- ✅ EXTRA safety: ensure email is always sent even if browser behaves oddly -->
+        <input type="hidden" id="email_hidden" name="email_hidden" value="{{ doctor.email }}">
+
+        <label for="phone">Phone</label>
+        <div class="phone-input">
+          <span class="flag">
+            <img src="{{ url_for('static', filename='images/saudi-flag.png') }}" class="flag-img">
+            +966
+          </span>
+          <input type="tel" id="phone" name="phone"
+            value="{{ doctor.phone[4:] if doctor.phone and doctor.phone.startswith('+966') else doctor.phone }}"
+            placeholder="5XXXXXXXX" pattern="^5\d{8}$" maxlength="9">
+        </div>
+
+        <label for="specialty">Specialty</label>
+        <input type="text" id="specialty" name="specialty" value="{{ doctor.specialty }}" pattern="^[A-Za-z\s]{3,25}$">
+
+        <div class="popup-buttons">
+          <button type="button" class="popup-cancel" id="closeEditProfileBtn">Cancel</button>
+          <button type="button" class="popup-confirm" id="saveBtn">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===== Change Password Popup ===== -->
+  <div class="popup-overlay" id="passPopup">
+    <div class="popup-box">
+      <h2>Change Password</h2>
+
+      <form id="changePasswordForm">
+        <label for="current_password">Current Password</label>
+        <input type="password" id="current_password" required minlength="6" autocomplete="current-password">
+
+        <label for="new_password">New Password</label>
+        <input type="password" id="new_password" required minlength="8" autocomplete="new-password">
+
+       <div id="pwdRequirements" style="background:#f8faff; border:1px solid #e5e7eb; border-radius:10px; padding:10px 14px; margin-top:8px; font-size:12.5px; line-height:1.9; color:#6b7280; text-align:left;">
+          <div id="rule-length">• At least 8 characters</div>
+          <div id="rule-upper">• Uppercase letter (A-Z)</div>
+          <div id="rule-lower">• Lowercase letter (a-z)</div>
+          <div id="rule-number">• Number (0-9)</div>
+          <div id="rule-special">• Special character (!@#$...)</div>
+        </div>
+
+        <label for="confirm_password">Confirm New Password</label>
+        <input type="password" id="confirm_password" required minlength="8" autocomplete="new-password">
+
+        <div class="popup-buttons" style="margin-top: 14px;">
+          <button type="button" class="popup-cancel" id="closePassModalBtn">Cancel</button>
+          <button type="submit" class="popup-confirm" id="passSubmitBtn">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="main-wrapper">
+
+    <div id="docheader">
+      <div style="display:flex; align-items:center; gap:15px;">
+        <button class="toggle-btn" id="toggleBtn">
+          <img src="{{ url_for('static', filename='images/sidebar_icon.png') }}" alt="menu" width="32" height="32">
+        </button>
+        <span id="pageTitle">My <span class="pt-blue">Profile</span></span>
+      </div>
+
+      <div class="doctor-info">
+        <div class="doctor-details">
+          <h2>Dr. {{ doctor.name }}</h2>
+          <p>{{ doctor.email }}</p>
+        </div>
+        <img src="{{ doctor.ProfilePicture if doctor.ProfilePicture else url_for('static', filename='images/user.png') }}"
+          class="profile-pic" alt="Profile" onclick="window.location.href='{{ url_for('profile') }}'">
+      </div>
+    </div>
+
+    <div class="main">
+      <div class="profile-cards">
+
+        <div class="p-card">
+        <div class="p-card-head">
+  <h3 class="p-card-title">My Profile</h3>
+
+  <button class="edit-btn edit-btn--top" id="editIcon" title="Edit Profile" type="button">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+      stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5l4 4L7 21H3v-4L16.5 3.5z" />
+    </svg>
+    Edit profile
+  </button>
+</div>
+
+
+          <div class="profile-top-card">
+            <div class="profile-left">
+              <div class="avatar-box">
+                <img id="profileAvatar"
+                  src="{{ doctor.ProfilePicture if doctor.ProfilePicture else url_for('static', filename='images/user-icon.jpg') }}"
+                  alt="Profile">
+              </div>
+            </div>
+
+            <div class="profile-middle">
+              <div class="info-line"><span class="info-label">Name:</span><span class="info-value" id="topName">{{ doctor.name }}</span></div>
+              <div class="info-line"><span class="info-label">Email:</span><span class="info-value" id="topEmail">{{ doctor.email }}</span></div>
+              <div class="info-line"><span class="info-label">Phone:</span><span class="info-value" id="topPhone">{{ doctor.phone }}</span></div>
+              <div class="info-line"><span class="info-label">Specialty:</span><span class="info-value" id="topSpecialty">{{ doctor.specialty }}</span></div>
+            </div>
+
+
+          </div>
+        </div>
+
+        <div class="p-card">
+          <h3 class="p-card-title">Password</h3>
+          <p class="muted-text">
+            You can modify your password anytime. Please note that your new password should meet
+            the minimal password strength requirements.
+          </p>
+          <div class="actions">
+            <button type="button" class="btn-outline-brand" id="openPassModalBtn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Change password
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <footer class="footer-medical">
+      <div class="fm-wrapper">
+        <div class="fm-left">
+          <img src="/static/images/logo.png" class="fm-logo" alt="Brainalyze">
+          <span class="fm-copy">© 2025 Brainalyze</span>
+        </div>
+
+        <div class="fm-center">
+          <span class="fm-title">FOLLOW US</span>
+          <div class="fm-icons">
+            <a style="text-decoration: none; color: black;" href="https://x.com/brainalyze_co">
+              <img src="/static/images/twitter.png" alt=""><br> @brainalyze_co
+            </a>
+          </div>
+        </div>
+
+        <div class="fm-right">
+          <span class="fm-title">CONTACT</span>
+          <p class="fm-contact">+966530782404</p>
+          <p class="fm-contact">443200466@student.ksu.edu.sa</p>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    function showToast(message, type) {
+      const toast = document.createElement("div");
+      toast.className = "toast " + type;
+      toast.textContent = message;
+      document.querySelector(".toast-container").appendChild(toast);
+
+      setTimeout(() => { toast.style.opacity = "1"; toast.style.transform = "translateY(0)"; }, 50);
+
+      setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(-20px)";
+        setTimeout(() => toast.remove(), 600);
+      }, 2200);
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+
+      const toggleBtn = document.getElementById("toggleBtn");
+      const sidebar = document.querySelector(".sidebar");
+      const overlay = document.getElementById("sidebarOverlay");
+      const pageTitle = document.getElementById("pageTitle");
+
+      const currentPath = window.location.pathname;
+      if (currentPath.includes("patients")) pageTitle.innerHTML = 'My <span class="pt-blue">Patients</span>';
+      else if (currentPath.includes("profile")) pageTitle.innerHTML = 'My <span class="pt-blue">Profile</span>';
+      else pageTitle.innerHTML = 'Brainalyze <span class="pt-blue">Home</span>';
+
+      toggleBtn.addEventListener("click", () => {
+        if (window.innerWidth > 768) sidebar.classList.toggle("collapsed");
+        else { sidebar.classList.toggle("active"); overlay.classList.toggle("active"); }
+      });
+
+      overlay.addEventListener("click", () => {
+        sidebar.classList.remove("active");
+        overlay.classList.remove("active");
+      });
+
+      // ===== Logout =====
+      const logoutBtn = document.getElementById("logoutBtn");
+      const logoutPopup = document.getElementById("logoutPopup");
+      const confirmLogout = document.getElementById("confirmLogout");
+      const cancelLogout = document.getElementById("cancelLogout");
+
+      logoutBtn.addEventListener("click", (event) => {
+        event.preventDefault();
+        logoutPopup.style.display = "flex";
+      });
+
+      cancelLogout.addEventListener("click", () => { logoutPopup.style.display = "none"; });
+
+      confirmLogout.addEventListener("click", () => {
+        logoutPopup.style.display = "none";
+        sessionStorage.clear();
+        localStorage.clear();
+        window.location.href = "{{ url_for('logout') }}";
+      });
+
+      window.addEventListener("click", (event) => {
+        if (event.target === logoutPopup) logoutPopup.style.display = "none";
+      });
+
+      // ===== Edit Profile Modal =====
+      const editIcon = document.getElementById("editIcon");
+      const editProfilePopup = document.getElementById("editProfilePopup");
+      const closeEditProfileBtn = document.getElementById("closeEditProfileBtn");
+
+      editIcon.addEventListener("click", () => { editProfilePopup.style.display = "flex"; });
+      closeEditProfileBtn.addEventListener("click", () => { editProfilePopup.style.display = "none"; });
+
+      window.addEventListener("click", (event) => {
+        if (event.target === editProfilePopup) editProfilePopup.style.display = "none";
+      });
+
+      // ===== Upload picture in modal =====
+      const previewImg = document.getElementById("previewImg");
+      const fileInput = document.getElementById("profile_pic");
+      previewImg.addEventListener("click", () => fileInput.click());
+
+      fileInput.addEventListener("change", (event) => {
+        if (event.target.files && event.target.files[0]) {
+          previewImg.src = URL.createObjectURL(event.target.files[0]);
+        }
+      });
+
+      // ===== Save Profile AJAX =====
+      const saveBtn = document.getElementById("saveBtn");
+      saveBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+
+        const form = document.getElementById("profileForm");
+        const formData = new FormData(form);
+
+        // ✅ ensure email always exists (server should use email OR email_hidden)
+        const emailValue = document.getElementById("email").value.trim();
+        if (emailValue) {
+          formData.set("email", emailValue);
+          formData.set("email_hidden", emailValue);
+        }
+
+        const phoneInput = document.getElementById("phone");
+        if (phoneInput && phoneInput.value.trim() !== "") {
+          formData.set("phone", "+966" + phoneInput.value.trim());
+        }
+
+        fetch("/profile/update_ajax", { method: "POST", body: formData })
+          .then(res => res.json())
+          .then(data => {
+            if (data.status === "success") {
+
+              // ✅ safer: handle either (FullName/Email) OR (name/email)
+              const updatedName = (data.updated_data && (data.updated_data.FullName || data.updated_data.name)) || "";
+              const updatedEmail = (data.updated_data && (data.updated_data.Email || data.updated_data.email)) || emailValue;
+
+              if (updatedName) {
+                document.querySelector(".doctor-details h2").textContent = "Dr. " + updatedName;
+                document.getElementById("topName").textContent = updatedName;
+              }
+              if (updatedEmail) {
+                document.querySelector(".doctor-details p").textContent = updatedEmail;
+                document.getElementById("topEmail").textContent = updatedEmail;
+              }
+
+              const newPhone = "+966" + (phoneInput.value.trim() || "");
+              if (newPhone.length > 4) document.getElementById("topPhone").textContent = newPhone;
+
+              const sp = document.getElementById("specialty").value.trim();
+              document.getElementById("topSpecialty").textContent = sp;
+
+              const pic = data.updated_data && (data.updated_data.ProfilePicture || data.updated_data.profilePicture);
+              if (pic) {
+                document.querySelectorAll(".profile-pic").forEach(img => img.src = pic);
+                document.getElementById("profileAvatar").src = pic;
+              } else {
+                document.getElementById("profileAvatar").src = previewImg.src;
+              }
+
+              showToast("Profile updated successfully!", "success");
+              editProfilePopup.style.display = "none";
+            } else {
+              showToast(data.message || "Update failed.", "error");
+            }
+          })
+          .catch(() => showToast("Server error.", "error"));
+      });
+
+      // ===== Password Modal =====
+      const passPopup = document.getElementById("passPopup");
+      const openPassModalBtn = document.getElementById("openPassModalBtn");
+      const closePassModalBtn = document.getElementById("closePassModalBtn");
+      const passSubmitBtn = document.getElementById("passSubmitBtn");
+
+      openPassModalBtn.addEventListener("click", () => { passPopup.style.display = "flex"; });
+
+      closePassModalBtn.addEventListener("click", () => {
+        passPopup.style.display = "none";
+        document.getElementById("changePasswordForm").reset();
+        resetPwdRules();
+      });
+
+      // ── Live password rule validation ──────────────────────────────────────
+      const pwdRules = [
+        { id: "rule-length",  label: "At least 8 characters",       test: v => v.length >= 8 },
+        { id: "rule-upper",   label: "Uppercase letter (A-Z)",       test: v => /[A-Z]/.test(v) },
+        { id: "rule-lower",   label: "Lowercase letter (a-z)",       test: v => /[a-z]/.test(v) },
+        { id: "rule-number",  label: "Number (0-9)",                 test: v => /[0-9]/.test(v) },
+        { id: "rule-special", label: "Special character (!@#$...)",  test: v => /[!@#$%^&*()\-_=+\[\]{};:'",.<>?/\\|`~]/.test(v) },
+      ];
+
+      function resetPwdRules() {
+        pwdRules.forEach(r => {
+          const el = document.getElementById(r.id);
+          if (el) { el.style.color = "#6b7280"; el.textContent = "• " + r.label; }
+        });
+      }
+
+      document.getElementById("new_password").addEventListener("input", function () {
+        const val = this.value;
+        pwdRules.forEach(r => {
+          const el = document.getElementById(r.id);
+          if (!el) return;
+          const ok = r.test(val);
+          el.style.color = ok ? "#16a34a" : "#6b7280";
+          el.style.fontWeight = ok ? "600" : "400";
+          el.textContent = (ok ? "✓ " : "• ") + r.label;
+        });
+      });
+
+      window.addEventListener("click", (event) => {
+        if (event.target === passPopup) {
+          passPopup.style.display = "none";
+          document.getElementById("changePasswordForm").reset();
+        }
+      });
+
+      // ✅ Change Password FIX: signIn then updatePassword then signOut
+      document.getElementById("changePasswordForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const currentPassword = document.getElementById("current_password").value.trim();
+        const newPassword = document.getElementById("new_password").value.trim();
+        const confirmPassword = document.getElementById("confirm_password").value.trim();
+
+        if (newPassword !== confirmPassword) { showToast("Passwords do not match.", "error"); return; }
+        if (newPassword.length < 8)             { showToast("Password must be at least 8 characters.", "error"); return; }
+        if (!/[A-Z]/.test(newPassword))         { showToast("Password must contain an uppercase letter (A-Z).", "error"); return; }
+        if (!/[a-z]/.test(newPassword))         { showToast("Password must contain a lowercase letter (a-z).", "error"); return; }
+        if (!/[0-9]/.test(newPassword))         { showToast("Password must contain a number (0-9).", "error"); return; }
+        if (!/[!@#$%^&*()\-_=+\[\]{};:'",.<>?/\\|`~]/.test(newPassword)) { showToast("Password must contain a special character (!@#$...).", "error"); return; }
+
+        passSubmitBtn.disabled = true;
+        const oldTxt = passSubmitBtn.textContent;
+        passSubmitBtn.textContent = "Updating...";
+
+        try {
+          const auth = firebase.auth();
+          const email = "{{ doctor.email }}"; // ✅ from server session
+
+          // 1) login using current password to verify
+          await auth.signInWithEmailAndPassword(email, currentPassword);
+
+          // 2) update password
+          const user = auth.currentUser;
+          if (!user) { showToast("Please login again.", "error"); return; }
+
+          await user.updatePassword(newPassword);
+
+          showToast("Password updated successfully!", "success");
+          passPopup.style.display = "none";
+          e.target.reset();
+
+          // 3) optional: sign out firebase session
+          await auth.signOut();
+
+        } catch (err) {
+          const code = err && err.code ? err.code : "";
+
+          if (code === "auth/wrong-password") {
+            showToast("Current password is incorrect.", "error");
+          } else if (code === "auth/user-not-found") {
+            showToast("User not found.", "error");
+          } else if (code === "auth/too-many-requests") {
+            showToast("Too many attempts. Try again later.", "error");
+          } else if (code === "auth/requires-recent-login") {
+            showToast("Please login again.", "error");
+          } else {
+            showToast("Failed to update password.", "error");
+          }
+        } finally {
+          passSubmitBtn.disabled = false;
+          passSubmitBtn.textContent = oldTxt;
+        }
+      });
+
+      setTimeout(() => {
+        document.querySelectorAll(".toast").forEach(t => {
+          t.style.transition = "opacity 0.6s, transform 0.6s";
+          t.style.opacity = "0";
+          t.style.transform = "translateY(-20px)";
+          setTimeout(() => t.remove(), 600);
+        });
+      }, 2200);
+
+    });
+  </script>
+
+<script src="/static/js/nav.js"></script>
+<script src="/static/js/helpbot.js"></script>
+</body>
+</html>
