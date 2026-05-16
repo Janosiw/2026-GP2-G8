@@ -189,7 +189,7 @@
     <div class="charts-grid">
       <div class="chart-card">
         <div class="chart-card-header">
-          <h3><span class="dot" style="background:#1e2a47;"></span> Gender Distribution</h3>
+        <h3><span class="dot" style="background:linear-gradient(135deg,#1e2a47,#c084c6);"></span> Gender Distribution</h3>
         </div>
         {% if gender_counts.Male + gender_counts.Female > 0 %}
         <div class="chart-container"><canvas id="genderChart"></canvas></div>
@@ -227,7 +227,7 @@
 
       <div class="chart-card">
         <div class="chart-card-header">
-          <h3><span class="dot" style="background:#3d6fa8;"></span> Recovery Status</h3>
+          <h3><span class="dot" style="background:linear-gradient(135deg,#3d6fa8,#22a06b);"></span> Recovery Status</h3>
         </div>
         {% if recovery_counts.Active + recovery_counts.Recovered > 0 %}
         <div class="chart-container"><canvas id="recoveryChart"></canvas></div>
@@ -345,13 +345,14 @@
   Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(26,26,46,0.88)';
 
   const C = {
-    navy:    '#1e2a47',
-    blue:    '#3d6fa8',
-    mid:     '#5580b8',
-    light:   '#6b8ec8',
-    pale:    '#8aaad4',
-    green:   '#16a34a',
-    pink:    '#ec4899',
+    lightBlue: '#9ed8f3',
+    teal:      '#2f9ec7',
+    navy:      '#0b3551',
+    amber:     '#f7b32b',
+    orange:    '#f58a1f',
+
+    green:     '#6fa58b',
+    gray:      '#9ca3af'
   };
 
   // ── Gender Donut ──
@@ -362,7 +363,7 @@
       labels: ['Male', 'Female'],
       datasets: [{
         data: [{{ gender_counts.Male }}, {{ gender_counts.Female }}],
-        backgroundColor: [C.navy, C.pale],
+        backgroundColor: [C.navy, C.orange],
         borderWidth: 3, borderColor: '#fff', hoverOffset: 10
       }]
     },
@@ -384,10 +385,10 @@
         label: 'Patients',
         data: [{{ age_groups['0-20'] }}, {{ age_groups['21-40'] }}, {{ age_groups['41-60'] }}, {{ age_groups['61+'] }}],
         backgroundColor: [
-          'rgba(107,142,200,0.85)',
-          'rgba(61,111,168,0.85)',
-          'rgba(30,42,71,0.85)',
-          'rgba(85,128,184,0.85)'
+          'rgba(158,216,243,0.88)', // light blue
+          'rgba(47,158,199,0.88)',  // teal
+          'rgba(11,53,81,0.88)',    // navy
+          'rgba(247,179,43,0.88)'   // amber
         ],
         borderRadius: 10, borderSkipped: false
       }]
@@ -417,12 +418,12 @@
       datasets: [{
         label: 'Total Cases',
         data: [{{ g_total }}, {{ m_total }}, {{ p_total }}, {{ u_total }}],
-        backgroundColor: [
-          'rgba(30,42,71,0.85)',
-          'rgba(61,111,168,0.85)',
-          'rgba(85,128,184,0.85)',
-          'rgba(107,142,200,0.85)'
-        ],
+      backgroundColor: [
+        'rgba(11,53,81,0.88)',    // Glioma
+        'rgba(47,158,199,0.88)',  // Meningioma
+        'rgba(245,138,31,0.88)',
+        'rgba(158,216,243,0.88)' 
+      ],
         borderRadius: 10, borderSkipped: false
       }]
     },
@@ -461,7 +462,7 @@
       labels: ['Still Active', 'Recovered'],
       datasets: [{
         data: [{{ recovery_counts.Active }}, {{ recovery_counts.Recovered }}],
-        backgroundColor: [C.blue, C.light],
+        backgroundColor: [C.teal, C.green],
         borderWidth: 3, borderColor: '#fff', hoverOffset: 10
       }]
     },
@@ -488,9 +489,10 @@
           {{ recovery_rate.Pituitary if recovery_rate.Pituitary is not none else 'null' }}
         ],
         backgroundColor: [
-          'rgba(30,42,71,0.85)',
-          'rgba(61,111,168,0.85)',
-          'rgba(107,142,200,0.85)'
+          'rgba(158,216,243,0.88)', // light blue
+          'rgba(47,158,199,0.88)',  // teal
+          'rgba(11,53,81,0.88)',    // navy
+          'rgba(247,179,43,0.88)'   // amber
         ],
         borderRadius: 10, borderSkipped: false
       }]

@@ -269,9 +269,12 @@
         pattern="^[A-Za-zÀ-ÖØ-öø-ÿ\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\s'.-]{3,50}$">
 
       <input
-        type="date"
+        type="text"
         name="DateOfBirth"
         id="dobInput"
+        placeholder="Birth Date"
+        onfocus="(this.type='date')"
+        onblur="if(!this.value)this.type='text'"
         required
         aria-label="Date of Birth">
 
