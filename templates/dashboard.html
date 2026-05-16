@@ -345,14 +345,13 @@
   Chart.defaults.plugins.tooltip.backgroundColor = 'rgba(26,26,46,0.88)';
 
   const C = {
-    lightBlue: '#9ed8f3',
-    teal:      '#2f9ec7',
-    navy:      '#0b3551',
-    amber:     '#f7b32b',
-    orange:    '#f58a1f',
+    pink:   '#ef476f',
+    yellow: '#ffd166',
+    green:  '#06d6a0',
+    teal:   '#118ab2',
+    navy:   '#073b4c',
 
-    green:     '#6fa58b',
-    gray:      '#9ca3af'
+    gray:   '#9ca3af'
   };
 
   // ── Gender Donut ──
@@ -363,7 +362,7 @@
       labels: ['Male', 'Female'],
       datasets: [{
         data: [{{ gender_counts.Male }}, {{ gender_counts.Female }}],
-        backgroundColor: [C.navy, C.orange],
+        backgroundColor: [C.navy, C.pink],
         borderWidth: 3, borderColor: '#fff', hoverOffset: 10
       }]
     },
@@ -385,10 +384,10 @@
         label: 'Patients',
         data: [{{ age_groups['0-20'] }}, {{ age_groups['21-40'] }}, {{ age_groups['41-60'] }}, {{ age_groups['61+'] }}],
         backgroundColor: [
-          'rgba(158,216,243,0.88)', // light blue
-          'rgba(47,158,199,0.88)',  // teal
-          'rgba(11,53,81,0.88)',    // navy
-          'rgba(247,179,43,0.88)'   // amber
+          'rgba(239,71,111,0.88)',   // pink
+          'rgba(255,209,102,0.88)',  // yellow
+          'rgba(6,214,160,0.88)',    // green
+          'rgba(17,138,178,0.88)'    // teal
         ],
         borderRadius: 10, borderSkipped: false
       }]
@@ -418,12 +417,12 @@
       datasets: [{
         label: 'Total Cases',
         data: [{{ g_total }}, {{ m_total }}, {{ p_total }}, {{ u_total }}],
-      backgroundColor: [
-        'rgba(11,53,81,0.88)',    // Glioma
-        'rgba(47,158,199,0.88)',  // Meningioma
-        'rgba(245,138,31,0.88)',
-        'rgba(158,216,243,0.88)' 
-      ],
+        backgroundColor: [
+          'rgba(7,59,76,0.9)',       // Glioma → navy
+          'rgba(17,138,178,0.9)',    // Meningioma → teal
+          'rgba(6,214,160,0.9)',     // Pituitary → green
+          'rgba(255,209,102,0.9)'    // Unknown → yellow
+        ],
         borderRadius: 10, borderSkipped: false
       }]
     },
@@ -527,9 +526,9 @@
           {{ avg_recovery_days.Pituitary if avg_recovery_days.Pituitary is not none else 'null' }}
         ],
         backgroundColor: [
-          'rgba(30,42,71,0.85)',
-          'rgba(61,111,168,0.85)',
-          'rgba(107,142,200,0.85)'
+          'rgba(239,71,111,0.88)',
+          'rgba(255,209,102,0.88)',
+          'rgba(17,138,178,0.88)'
         ],
         borderRadius: 10, borderSkipped: false
       }]
@@ -558,11 +557,11 @@
       datasets: [{
         label: 'New Patients',
         data: {{ monthly_data | tojson }},
-        borderColor: C.blue,
-        backgroundColor: 'rgba(61,111,168,.08)',
+        borderColor: C.teal,
+        backgroundColor: 'rgba(17,138,178,.10)',
         borderWidth: 2.5,
         pointBackgroundColor: '#fff',
-        pointBorderColor: C.blue,
+        pointBorderColor: C.teal,
         pointBorderWidth: 2.5,
         pointRadius: 5, pointHoverRadius: 8,
         fill: true, tension: 0.4
@@ -588,7 +587,7 @@
       datasets: [{
         label: 'New Patients',
         data: {{ yearly_data | tojson }},
-        backgroundColor: 'rgba(61,111,168,0.85)',
+        backgroundColor: 'rgba(7,59,76,0.88)',
         borderRadius: 12, borderSkipped: false
       }]
     },
