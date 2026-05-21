@@ -1247,6 +1247,7 @@ def save_report_for_scan():
     impression_text    = d.get("ImpressionText")    or ""
 
     # If no findings data stored yet, generate it now
+# If no findings data stored yet, generate it now
     if not findings_bullets:
         try:
             from utils import call_hf_report_api
