@@ -42,8 +42,26 @@ def call_hf_report_api(findings_text: str) -> dict:
     base = os.getenv("REPORT_LLM_URL", "").rstrip("/")
     if not base:
         raise RuntimeError("REPORT_LLM_URL is not set")
+
     url = f"{base}/generate_impression"
-    r = requests.post(url, json={"findings_text": findings_text}, timeout=20)
+
+    headers = {"Content-Type": "application/json"}
+    token = os.getenv("REPORT_LLM_TOKEN", "").strip()
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    timeout = int(os.getenv("REPORT_LLM_TIMEOUT", "120"))
+
+    r = requests.post(
+        url,
+        json={"findings_text": findings_text},
+        headers=headers,
+        timeout=timeout
+    )
+
+    print("LLM status:", r.status_code)
+    print("LLM response:", r.text[:500])
+
     r.raise_for_status()
     return r.json()
 
