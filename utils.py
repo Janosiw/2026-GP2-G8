@@ -58,7 +58,7 @@ def call_hf_report_api(findings_text: str) -> dict:
     if token:
         headers["Authorization"] = f"Bearer {token}"
 
-    timeout = int(os.getenv("REPORT_LLM_TIMEOUT", "60"))
+    timeout = int(os.getenv("REPORT_LLM_TIMEOUT", "120"))
 
     r = requests.post(
         url,
