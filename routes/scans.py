@@ -1246,31 +1246,41 @@ def save_report_for_scan():
     findings_text      = d.get("FindingsText")      or ""
     impression_text    = d.get("ImpressionText")    or ""
 
-    # If no findings data stored yet, generate it now
-# If no findings data stored yet, generate it now
-    if not findings_bullets:
-        try:
-            from utils import call_hf_report_api
-            vm = d.get("VolumeMetrics") or {}
-            ft = findings_text or build_findings_text(
-                tumor_type=d.get("ClassificationResult"),
-                confidence=d.get("ConfidenceScore"),
-                mask_metrics=d.get("MaskMetrics"),
-                volume_3d=vm if d.get("Is3D") else None,
-            )
-            report = call_hf_report_api(ft)
-            findings_bullets   = report.get("findings_bullets", [])
-            impression_bullets = report.get("impression_bullets", [])
-            impression_text    = report.get("impression") or " ".join(impression_bullets)
-        except Exception as e:
-            fallback = _fallback_report(
-                findings_text or "",
-                d.get("ClassificationResult", ""),
-                d.get("VolumeMetrics") or d.get("MaskMetrics") or {}
-            )
-            findings_bullets   = fallback["findings_bullets"]
-            impression_bullets = fallback["impression_bullets"]
-            impression_text    = fallback["impression"]
+
+    # Always regenerate report using LLM
+    try:
+        from utils import call_hf_report_api
+    
+        vm = d.get("VolumeMetrics") or {}
+    
+        ft = findings_text or build_findings_text(
+            tumor_type=d.get("ClassificationResult"),
+            confidence=d.get("ConfidenceScore"),
+            mask_metrics=d.get("MaskMetrics"),
+            volume_3d=vm if d.get("Is3D") else None,
+        )
+    
+        print("Reached LLM in save_report_for_scan")
+        print("findings_text:", ft)
+    
+        report = call_hf_report_api(ft)
+    
+        findings_bullets   = report.get("findings_bullets", [])
+        impression_bullets = report.get("impression_bullets", [])
+        impression_text    = report.get("impression") or " ".join(impression_bullets)
+    
+    except Exception as e:
+        print("LLM failed in save_report_for_scan:", e)
+    
+        fallback = _fallback_report(
+            findings_text or "",
+            d.get("ClassificationResult", ""),
+            d.get("VolumeMetrics") or d.get("MaskMetrics") or {}
+        )
+    
+        findings_bullets   = fallback["findings_bullets"]
+        impression_bullets = fallback["impression_bullets"]
+        impression_text    = fallback["impression"]
 
     report_content = {
         "findings_text":      findings_text,
