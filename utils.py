@@ -39,18 +39,26 @@ def send_otp_email(to_email, otp_code):
 
 
 def call_hf_report_api(findings_text: str) -> dict:
+    import os
+    import requests
+
     base = os.getenv("REPORT_LLM_URL", "").rstrip("/")
+
     if not base:
         raise RuntimeError("REPORT_LLM_URL is not set")
 
     url = f"{base}/generate_impression"
 
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "Content-Type": "application/json"
+    }
+
     token = os.getenv("REPORT_LLM_TOKEN", "").strip()
+
     if token:
         headers["Authorization"] = f"Bearer {token}"
 
-    timeout = int(os.getenv("REPORT_LLM_TIMEOUT", "120"))
+    timeout = int(os.getenv("REPORT_LLM_TIMEOUT", "60"))
 
     r = requests.post(
         url,
@@ -63,6 +71,7 @@ def call_hf_report_api(findings_text: str) -> dict:
     print("LLM response:", r.text[:500])
 
     r.raise_for_status()
+
     return r.json()
 
 
