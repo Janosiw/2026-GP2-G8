@@ -1249,7 +1249,7 @@ def save_report_for_scan():
     # If no findings data stored yet, generate it now
     if not findings_bullets:
         try:
-            from utils import call_hf_report_api, build_findings_text
+            from utils import call_hf_report_api
             vm = d.get("VolumeMetrics") or {}
             ft = findings_text or build_findings_text(
                 tumor_type=d.get("ClassificationResult"),
